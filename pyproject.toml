@@ -1,0 +1,13 @@
+[project]
+name = "ostrovok-geo-agent"
+version = "0.1.0"
+description = "Minimal LangGraph geo agent for Kazan"
+requires-python = ">=3.11"
+dependencies = [
+  "langgraph>=1.0,<2",
+  "langchain-openai>=1.0,<2",
+  "osmnx>=2.0,<3",
+  "requests-cache>=1.2,<2",
+  "python-dotenv>=1.0,<2",
+  "langgraph-cli[inmem]>=0.4.38",
+]
