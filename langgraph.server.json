@@ -1,0 +1,26 @@
+{
+  "dependencies": [
+    "."
+  ],
+  "graphs": {
+    "geo_agent": "./langgraph_app.py:graph"
+  },
+  "env": {},
+  "http": {
+    "app": "./ui_api.py:app",
+    "cors": {
+      "allow_origins": [
+        "https://smith.langchain.com",
+        "https://eu.smith.langchain.com",
+        "https://188.241.197.121:8443"
+      ],
+      "allow_methods": [
+        "*"
+      ],
+      "allow_headers": [
+        "*"
+      ],
+      "allow_credentials": true
+    }
+  }
+}

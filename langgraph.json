@@ -3,5 +3,6 @@
   "graphs": {
     "geo_agent": "./langgraph_app.py:graph"
   },
-  "env": ".env"
+  "env": ".env",
+  "http": {"app": "./ui_api.py:app"}
 }

@@ -1,0 +1,14 @@
+{
+  "name": "ostrovok-map-ui",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {"dev": "vite --host 127.0.0.1", "build": "vite build", "test": "node --test tests/*.test.js"},
+  "dependencies": {
+    "react": "^19.2.0", "react-dom": "^19.2.0",
+    "maplibre-gl": "^5.6.0", "@deck.gl/core": "^9.1.0",
+    "@deck.gl/layers": "^9.1.0", "@deck.gl/mapbox": "^9.1.0", "@deck.gl/mesh-layers": "^9.1.0",
+    "marked": "^17.0.0", "dompurify": "^3.3.0"
+  },
+  "devDependencies": {"vite": "^7.0.0"}
+}
