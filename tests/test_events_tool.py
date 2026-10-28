@@ -8,7 +8,8 @@ from langchain_core.messages import AIMessage, HumanMessage
 from langgraph.checkpoint.memory import InMemorySaver
 
 from hotel_agent import cli
-from hotel_agent.apis.kudago.models import EventDetails, EventItem, ExhibitionItem, StayEvents
+from hotel_agent.apis.kudago.models import (EventDetails, EventItem,
+                                            ExhibitionItem, StayEvents)
 from hotel_agent.graph.builder import build_graph
 from hotel_agent.graph.context import AgentContext
 from kudago_events.load import RefreshResult

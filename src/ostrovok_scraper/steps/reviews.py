@@ -4,7 +4,8 @@ from ostrovok_scraper.api import OstrovokApi
 from ostrovok_scraper.config import ScraperConfig
 from ostrovok_scraper.domain import reviews_key
 from ostrovok_scraper.steps import Item, StepReport, run_items
-from ostrovok_scraper.steps.inputs import page_facts, selected_hotels, serp_hotels
+from ostrovok_scraper.steps.inputs import (page_facts, selected_hotels,
+                                           serp_hotels)
 from ostrovok_scraper.store import RawStore
 
 PAGE_SIZE = 500

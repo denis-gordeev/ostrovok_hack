@@ -15,18 +15,11 @@ from decimal import ROUND_HALF_UP, Decimal
 from typing import Literal
 from zoneinfo import ZoneInfo
 
-from hotel_agent.apis.ostrovok.models import (
-    Amenity,
-    City,
-    DataWindow,
-    HotelCandidate,
-    HotelRecord,
-    OstrovokError,
-    RateTemplate,
-    RoomOffer,
-    SearchResult,
-    StaySearch,
-)
+from hotel_agent.apis.ostrovok.models import (Amenity, City, DataWindow,
+                                              HotelCandidate, HotelRecord,
+                                              OstrovokError, RateTemplate,
+                                              RoomOffer, SearchResult,
+                                              StaySearch)
 
 MSK = ZoneInfo("Europe/Moscow")
 SITE_URL = "https://ostrovok.ru"

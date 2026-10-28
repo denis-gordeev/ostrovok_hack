@@ -4,7 +4,7 @@ from unittest.mock import patch
 from pydantic import ValidationError
 
 from geo_api import FeatureRequest
-from geo_tools import search_osm, validate_point, ox
+from geo_tools import ox, search_osm, validate_point
 
 
 class SearchRadiusTests(unittest.TestCase):

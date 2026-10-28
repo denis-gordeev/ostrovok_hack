@@ -3,7 +3,8 @@ import unittest
 from unittest.mock import patch
 from uuid import uuid4
 
-from langchain_core.language_models.fake_chat_models import FakeMessagesListChatModel
+from langchain_core.language_models.fake_chat_models import \
+    FakeMessagesListChatModel
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langchain_core.tools import tool
 from langgraph.checkpoint.memory import InMemorySaver

@@ -2,11 +2,13 @@ from datetime import time
 from decimal import Decimal
 
 import pytest
-
 from ostrovok_helpers import load_fixture
 
-from ostrovok_scraper.parsing.hotel_page import extract_next_data, parse_city_region, parse_hotel, parse_rooms
-from ostrovok_scraper.parsing.serp import MapHotel, parse_map_hotels, parse_session_region
+from ostrovok_scraper.parsing.hotel_page import (extract_next_data,
+                                                 parse_city_region,
+                                                 parse_hotel, parse_rooms)
+from ostrovok_scraper.parsing.serp import (MapHotel, parse_map_hotels,
+                                           parse_session_region)
 
 
 def test_parse_map_hotels_skips_broken_items():

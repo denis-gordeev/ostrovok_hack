@@ -1,7 +1,7 @@
 """Retries recover transient failures without repeating successful graph steps."""
 
-import unittest
 import ssl
+import unittest
 from unittest.mock import Mock, patch
 
 import httpx
@@ -71,8 +71,10 @@ class RetryTests(unittest.TestCase):
                     self.assertEqual(post.call_count, 1)
 
     def test_real_graph_retries_model_without_adding_failed_messages(self):
-        from langchain_core.language_models.fake_chat_models import FakeMessagesListChatModel
+        from langchain_core.language_models.fake_chat_models import \
+            FakeMessagesListChatModel
         from pydantic import PrivateAttr
+
         from agent import build_agent
 
         class FlakyModel(FakeMessagesListChatModel):

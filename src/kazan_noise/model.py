@@ -13,14 +13,8 @@ from shapely.ops import nearest_points
 
 from kazan_noise import weights as w
 from kazan_noise.features import Features
-from kazan_noise.propagation import (
-    air_db,
-    discretize,
-    divergence_db,
-    energy_sum,
-    path_difference,
-    shield_db,
-)
+from kazan_noise.propagation import (air_db, discretize, divergence_db,
+                                     energy_sum, path_difference, shield_db)
 
 
 @dataclass(frozen=True)

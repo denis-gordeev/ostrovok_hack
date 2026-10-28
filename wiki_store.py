@@ -1,9 +1,13 @@
 """Disk corpus and deterministic Russian lexical features; no model calls."""
 
-import json, re, sqlite3, threading
+import json
+import re
+import sqlite3
+import threading
 from functools import lru_cache
 from pathlib import Path
 from urllib.parse import quote
+
 import snowballstemmer
 
 SCHEMA = """

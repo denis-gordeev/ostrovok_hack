@@ -9,16 +9,9 @@ from shapely.geometry import LineString, Point, box
 
 from kazan_noise import snapshot
 from kazan_noise.features import BuildReport, Source
-from kazan_noise.snapshot import (
-    FORMAT_VERSION,
-    SnapshotMissingError,
-    load_features,
-    pack_geoms,
-    read_meta,
-    save_features,
-    unpack_geoms,
-    write_meta,
-)
+from kazan_noise.snapshot import (FORMAT_VERSION, SnapshotMissingError,
+                                  load_features, pack_geoms, read_meta,
+                                  save_features, unpack_geoms, write_meta)
 
 
 def test_features_round_trip(tmp_path):

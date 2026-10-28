@@ -3,7 +3,10 @@
 No corpus/index is published by this helper. The final indexer verifies all rows.
 """
 
-import argparse, sqlite3, sys, time
+import argparse
+import sqlite3
+import sys
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))

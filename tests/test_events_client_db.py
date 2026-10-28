@@ -7,7 +7,8 @@ import pytest
 from hotel_agent.apis.kudago.client import EventsClient
 from hotel_agent.apis.kudago.models import EventsError
 from kudago_events.parse import EventRow, Session
-from kudago_events.store import apply_migrations, connect, finish_load, replace_events, start_load
+from kudago_events.store import (apply_migrations, connect, finish_load,
+                                 replace_events, start_load)
 
 pytestmark = pytest.mark.db
 

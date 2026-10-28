@@ -6,7 +6,8 @@ from langchain_core.outputs import ChatGeneration, ChatResult
 from pydantic import Field
 
 from hotel_agent.apis.kudago.models import EventsError
-from hotel_agent.apis.ostrovok.models import HotelCandidate, OstrovokError, SearchResult, StaySearch
+from hotel_agent.apis.ostrovok.models import (HotelCandidate, OstrovokError,
+                                              SearchResult, StaySearch)
 
 TODAY = date(2026, 10, 24)
 

@@ -1,7 +1,8 @@
 from datetime import UTC, datetime
 
 import pytest
-from kudago_helpers import ENDLESS, STARTLESS, WINDOW_END, WINDOW_START, api_date, api_event, msk
+from kudago_helpers import (ENDLESS, STARTLESS, WINDOW_END, WINDOW_START,
+                            api_date, api_event, msk)
 
 from kudago_events.parse import Session, parse_event
 

@@ -1,6 +1,7 @@
 from hotel_agent.cli import _load_noise
 from hotel_agent.tools.noise import point_for_llm
-from kazan_noise.service import ModeScore, NoiseReport, NoiseService, QuietSide, SourceInfo
+from kazan_noise.service import (ModeScore, NoiseReport, NoiseService,
+                                 QuietSide, SourceInfo)
 
 ROAD = SourceInfo(
     kind="road", subtype="primary", name="улица Баумана", distance_m=35, share_day=0.7, share_night=0.5, shielded=False

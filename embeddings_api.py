@@ -1,11 +1,13 @@
 """Private CPU RuBERT encoder. No LLM generation or external inference API."""
 
-import os, threading
+import os
+import threading
 from contextlib import asynccontextmanager
+
 import torch
-from transformers import AutoModel, AutoTokenizer
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
+from transformers import AutoModel, AutoTokenizer
 
 MODEL = "cointegrated/rubert-tiny2"
 REVISION = "e8ed3b0c8bbf4fb6984c3de043bf7d2f4e5969ae"

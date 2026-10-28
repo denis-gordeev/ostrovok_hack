@@ -4,25 +4,13 @@ from typing import Self
 import psycopg
 from psycopg.rows import dict_row
 
-from hotel_agent.apis.kudago.models import (
-    EventDetails,
-    EventItem,
-    EventsError,
-    EventSession,
-    ExhibitionItem,
-    LoadInfo,
-    PlaceInfo,
-    StayEvents,
-    StoredEvent,
-)
-from hotel_agent.apis.kudago.select import (
-    format_session,
-    is_long,
-    overlaps,
-    select_events,
-    until_date,
-    visit_bounds,
-)
+from hotel_agent.apis.kudago.models import (EventDetails, EventItem,
+                                            EventsError, EventSession,
+                                            ExhibitionItem, LoadInfo,
+                                            PlaceInfo, StayEvents, StoredEvent)
+from hotel_agent.apis.kudago.select import (format_session, is_long, overlaps,
+                                            select_events, until_date,
+                                            visit_bounds)
 from hotel_agent.config import Settings
 from hotel_agent.dates import MOSCOW_TZ
 

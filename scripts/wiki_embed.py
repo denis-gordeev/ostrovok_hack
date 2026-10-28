@@ -1,10 +1,17 @@
 """Resume local RuBERT embeddings and publish a FAISS graph-retrieval index."""
 
-import argparse, hashlib, json, sqlite3, sys, time
+import argparse
+import hashlib
+import json
+import sqlite3
+import sys
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-import faiss, numpy as np
+import faiss
+import numpy as np
+
 from wiki_embeddings import LocalRuBertEmbeddings
 from wiki_store import connect, metadata
 

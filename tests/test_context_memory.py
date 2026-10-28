@@ -12,7 +12,8 @@ from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langgraph.graph import END, START, StateGraph
 from langgraph.prebuilt import ToolNode
 
-from map_tools import GeoState, collect_geo_results, collection, feature, map_result, read_geo_result, update_map
+from map_tools import (GeoState, collect_geo_results, collection, feature,
+                       map_result, read_geo_result, update_map)
 
 
 class ContextMemoryTests(unittest.TestCase):
@@ -83,8 +84,10 @@ class ContextMemoryTests(unittest.TestCase):
 
     @unittest.skipUnless(importlib.util.find_spec("langmem"), "langmem is not installed")
     def test_agent_cycle_summarizes_and_uses_verified_result(self):
-        from langchain_core.language_models.fake_chat_models import FakeListChatModel, FakeMessagesListChatModel
+        from langchain_core.language_models.fake_chat_models import (
+            FakeListChatModel, FakeMessagesListChatModel)
         from langgraph.checkpoint.memory import InMemorySaver
+
         from agent import build_agent
 
         class ToolModel(FakeMessagesListChatModel):
@@ -120,7 +123,8 @@ class ContextMemoryTests(unittest.TestCase):
 
     @unittest.skipUnless(importlib.util.find_spec("langmem"), "langmem is not installed")
     def test_real_summarization_node_preserves_tool_pairs_and_registry(self):
-        from langchain_core.language_models.fake_chat_models import FakeListChatModel
+        from langchain_core.language_models.fake_chat_models import \
+            FakeListChatModel
         from langmem.short_term import SummarizationNode
 
         state = self.compacted_state()

@@ -3,22 +3,12 @@ from decimal import Decimal
 
 import pytest
 
-from hotel_agent.apis.ostrovok.models import (
-    City,
-    DataWindow,
-    HotelRecord,
-    OstrovokError,
-    RateTemplate,
-    StaySearch,
-)
-from hotel_agent.apis.ostrovok.search import (
-    MSK,
-    rank_hotels,
-    resolve_city,
-    room_occupancies,
-    split_guests,
-    validate_search,
-)
+from hotel_agent.apis.ostrovok.models import (City, DataWindow, HotelRecord,
+                                              OstrovokError, RateTemplate,
+                                              StaySearch)
+from hotel_agent.apis.ostrovok.search import (MSK, rank_hotels, resolve_city,
+                                              room_occupancies, split_guests,
+                                              validate_search)
 
 TODAY = date(2026, 10, 27)
 WINDOW = DataWindow(first_night=date(2026, 10, 26), last_night=date(2026, 11, 29), scraped_on=date(2026, 10, 26))

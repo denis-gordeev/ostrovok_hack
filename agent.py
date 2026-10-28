@@ -19,13 +19,8 @@ from map_tools import compose_routes
 from web_tools import search_web
 
 TOOLS = [*GEO_TOOLS, *HOTEL_TOOLS, search_web, compose_routes]
-from agent_limits import (
-    CallLimits,
-    limit_result,
-    reserve_model,
-    reserve_tools,
-    start_turn,
-)
+from agent_limits import (CallLimits, limit_result, reserve_model,
+                          reserve_tools, start_turn)
 from context_memory import summarize_safely
 from map_tools import GeoState, collect_geo_results
 from retry_utils import REMOTE_RETRY_POLICY, retry_remote_call

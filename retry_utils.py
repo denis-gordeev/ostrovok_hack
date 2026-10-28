@@ -1,9 +1,10 @@
 """Bounded retries for transient remote failures, before tool error formatting."""
 
+import ssl
+
 import httpx
 import openai
 import requests
-import ssl
 from langchain_core.runnables import RunnableLambda
 from langgraph.types import RetryPolicy
 

@@ -8,11 +8,15 @@ from psycopg.types.json import Jsonb
 
 from ostrovok_scraper.config import MSK, ScraperConfig
 from ostrovok_scraper.domain import parse_key
-from ostrovok_scraper.parsing.hotel_page import parse_city_region, parse_hotel, parse_rooms
+from ostrovok_scraper.parsing.hotel_page import (parse_city_region,
+                                                 parse_hotel, parse_rooms)
 from ostrovok_scraper.parsing.rates import free_child_age, parse_rates
-from ostrovok_scraper.parsing.reviews import parse_api_reviews, parse_page_reviews
-from ostrovok_scraper.parsing.serp import parse_map_hotels, parse_session_region
-from ostrovok_scraper.rows import HotelRow, RateRow, RegionRow, ReviewRow, RoomRow
+from ostrovok_scraper.parsing.reviews import (parse_api_reviews,
+                                              parse_page_reviews)
+from ostrovok_scraper.parsing.serp import (parse_map_hotels,
+                                           parse_session_region)
+from ostrovok_scraper.rows import (HotelRow, RateRow, RegionRow, ReviewRow,
+                                   RoomRow)
 from ostrovok_scraper.store import RawStore
 
 _COUNT_KEYS = ("regions", "hotels", "rooms", "night_prices", "rates", "reviews")

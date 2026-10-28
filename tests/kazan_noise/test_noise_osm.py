@@ -1,16 +1,10 @@
 import numpy as np
 import pytest
-from noise_helpers import (
-    KAZAN_LAT,
-    KAZAN_LON,
-    KAZAN_X,
-    KAZAN_Y,
-    osm_node,
-    osm_relation,
-    osm_way,
-)
+from noise_helpers import (KAZAN_LAT, KAZAN_LON, KAZAN_X, KAZAN_Y, osm_node,
+                           osm_relation, osm_way)
 
-from kazan_noise.osm import element_geometry, project, project_point, unproject_xy
+from kazan_noise.osm import (element_geometry, project, project_point,
+                             unproject_xy)
 
 SQUARE = [(49.10, 55.79), (49.11, 55.79), (49.11, 55.80), (49.10, 55.80), (49.10, 55.79)]
 

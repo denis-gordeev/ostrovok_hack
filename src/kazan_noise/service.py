@@ -10,7 +10,8 @@ from shapely.prepared import prep
 
 from kazan_noise.config import DAY, NIGHT
 from kazan_noise.grid import load_grid
-from kazan_noise.model import Contribution, NoiseModel, PointResult, ReceiverResult
+from kazan_noise.model import (Contribution, NoiseModel, PointResult,
+                               ReceiverResult)
 from kazan_noise.osm import project_point
 from kazan_noise.propagation import energy_sum
 from kazan_noise.scale import Scale, label

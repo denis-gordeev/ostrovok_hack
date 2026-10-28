@@ -1,11 +1,14 @@
 import copy
 import os
 import unittest
-import httpx
-import openai
 from types import SimpleNamespace
 from unittest.mock import patch
-from wiki_retrieval import summarize_wikipedia, wikipedia_search, wikipedia_article
+
+import httpx
+import openai
+
+from wiki_retrieval import (summarize_wikipedia, wikipedia_article,
+                            wikipedia_search)
 
 
 class SummaryTests(unittest.TestCase):

@@ -2,7 +2,8 @@ from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from hotel_agent.apis.kudago.models import EventSession, StoredEvent
-from hotel_agent.apis.kudago.select import format_session, select_events, until_date
+from hotel_agent.apis.kudago.select import (format_session, select_events,
+                                            until_date)
 
 MSK = ZoneInfo("Europe/Moscow")
 # Визит 19–22 ноября: дни с заезда по выезд включительно.

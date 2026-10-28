@@ -4,7 +4,8 @@ from langchain.tools import ToolRuntime, tool
 from langchain_core.messages import ToolMessage
 from langgraph.types import Command
 
-from hotel_agent.apis.ostrovok.models import OstrovokError, SearchResult, StaySearch
+from hotel_agent.apis.ostrovok.models import (OstrovokError, SearchResult,
+                                              StaySearch)
 from hotel_agent.graph.context import AgentContext
 from hotel_agent.graph.state import AgentState
 

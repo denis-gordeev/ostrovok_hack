@@ -1,6 +1,8 @@
 """Non-generative deployment checks against the completed Wikipedia index."""
 
-import json, os, time
+import json
+import os
+import time
 from pathlib import Path
 
 

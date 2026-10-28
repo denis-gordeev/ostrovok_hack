@@ -4,14 +4,8 @@ from pathlib import Path
 import pytest
 
 from kazan_noise.config import NoiseConfig
-from kazan_noise.queries import (
-    areas_query,
-    area_id,
-    bbox_with_buffer,
-    boundary_query,
-    buildings_query,
-    lines_query,
-)
+from kazan_noise.queries import (area_id, areas_query, bbox_with_buffer,
+                                 boundary_query, buildings_query, lines_query)
 
 
 def test_area_id_for_kazan():

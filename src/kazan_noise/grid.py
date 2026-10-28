@@ -14,7 +14,8 @@ from kazan_noise import weights as w
 from kazan_noise.config import NoiseConfig
 from kazan_noise.model import NoiseModel
 from kazan_noise.osm import project
-from kazan_noise.snapshot import DAMAGED_ERRORS, SnapshotMissingError, atomic_write, load_features, weights_hash
+from kazan_noise.snapshot import (DAMAGED_ERRORS, SnapshotMissingError,
+                                  atomic_write, load_features, weights_hash)
 
 # Точек на задачу процесса.
 CHUNK = 256

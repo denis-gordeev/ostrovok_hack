@@ -1,9 +1,15 @@
 """LangChain Embeddings backed by our private CPU encoder, with disk caching."""
 
-import hashlib, json, os, sqlite3
+import hashlib
+import json
+import os
+import sqlite3
 from pathlib import Path
-import httpx, numpy as np
+
+import httpx
+import numpy as np
 from langchain_core.embeddings import Embeddings
+
 from wiki_store import ClosingConnection
 
 

@@ -3,12 +3,12 @@ from datetime import date
 from unittest.mock import patch
 
 import pytest
-from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+from agent_helpers import KAZAN_RESULT, FakeOstrovok
 from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langgraph.checkpoint.memory import InMemorySaver
 
-from agent_helpers import KAZAN_RESULT, FakeOstrovok
 from hotel_agent.apis.ostrovok.models import StaySearch
 from hotel_geo_tools import find_hotels, select_quiet_hotels
 
@@ -181,9 +181,10 @@ def test_shared_agent_search_updates_map_with_same_history(tmp_path, monkeypatch
 
 
 def test_missing_events_returns_explicit_unavailability_not_no_events():
-    from hotel_geo_tools import events_in_kazan
-    from hotel_agent.apis.kudago.models import EventsError
     from unittest.mock import AsyncMock
+
+    from hotel_agent.apis.kudago.models import EventsError
+    from hotel_geo_tools import events_in_kazan
 
     client = AsyncMock()
     client.events_for_stay.side_effect = EventsError("not loaded")

@@ -2,7 +2,8 @@ from collections.abc import Callable, Sequence
 from datetime import date
 
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
+from langchain_core.messages import (AIMessage, BaseMessage, HumanMessage,
+                                     SystemMessage)
 from pydantic import BaseModel
 
 from hotel_agent.dates import today_in_moscow

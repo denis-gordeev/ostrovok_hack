@@ -8,6 +8,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from shapely.geometry import Point
+
 from geo_api import DRIVE_SPEEDS, route_result
 from geo_tools import ox
 

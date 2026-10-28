@@ -1,6 +1,10 @@
 """Download a pinned, complete ruwiki snapshot with resume and SHA1 verification."""
 
-import argparse, hashlib, json, subprocess, urllib.request
+import argparse
+import hashlib
+import json
+import subprocess
+import urllib.request
 from pathlib import Path
 
 UA = "OstrovokKazanResearch/0.1 (+https://github.com/ostrovok-hackathon-2026/graceful-knitting-raccoon)"

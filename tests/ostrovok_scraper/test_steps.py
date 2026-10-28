@@ -7,7 +7,8 @@ from ostrovok_scraper.api import Fetched
 from ostrovok_scraper.config import ScraperConfig
 from ostrovok_scraper.http import BlockedError, OstrovokHttpError
 from ostrovok_scraper.steps import Item, run_items
-from ostrovok_scraper.steps.inputs import available_nights, guests_hotels, selected_hotels, serp_hotels
+from ostrovok_scraper.steps.inputs import (available_nights, guests_hotels,
+                                           selected_hotels, serp_hotels)
 from ostrovok_scraper.steps.rates import child_age_night, plan_rate_requests
 from ostrovok_scraper.steps.reviews import review_pages
 from ostrovok_scraper.steps.search import serp_guests_items, serp_items

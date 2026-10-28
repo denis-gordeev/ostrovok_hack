@@ -3,12 +3,12 @@
 import hashlib
 import json
 import os
-import tempfile
 import re
+import tempfile
 from concurrent.futures import ThreadPoolExecutor
-from typing import Literal
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Literal
 
 import osmnx as ox
 import requests
@@ -17,10 +17,12 @@ from dotenv import load_dotenv
 from langchain_core.tools import tool
 from shapely.geometry import Point, shape
 
-from map_tools import collection, decode_polyline, feature, map_result, read_geo_result, update_map
-from wiki_retrieval import wikipedia_search, wikipedia_article
-from region_config import BOUNDS, DATA_VERSION, MAX_WALK_DISTANCE_M, MAX_SEARCH_RADIUS_M
+from map_tools import (collection, decode_polyline, feature, map_result,
+                       read_geo_result, update_map)
+from region_config import (BOUNDS, DATA_VERSION, MAX_SEARCH_RADIUS_M,
+                           MAX_WALK_DISTANCE_M)
 from retry_utils import geo_post, retry_remote_call
+from wiki_retrieval import wikipedia_article, wikipedia_search
 
 load_dotenv()
 CACHE_DIR = Path(os.getenv("CACHE_DIR", ".cache")).resolve()

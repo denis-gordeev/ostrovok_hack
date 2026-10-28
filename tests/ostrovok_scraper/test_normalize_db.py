@@ -1,9 +1,8 @@
+import os
 from decimal import Decimal
 
 import psycopg
 import pytest
-import os
-
 from ostrovok_helpers import load_fixture
 
 from ostrovok_scraper.config import ScraperConfig

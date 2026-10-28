@@ -1,13 +1,15 @@
 import json
 
 import pytest
-from agent_helpers import KAZAN_RESULT, TODAY, FakeOstrovok, ScriptedChatModel, tatarstan_call, tool_result
+from agent_helpers import (KAZAN_RESULT, TODAY, FakeOstrovok,
+                           ScriptedChatModel, tatarstan_call, tool_result)
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langgraph.checkpoint.memory import InMemorySaver
 
 from hotel_agent.graph.builder import build_graph
 from hotel_agent.graph.context import AgentContext
-from kazan_noise.service import ModeScore, NoiseReport, OutsideKazanError, SourceInfo
+from kazan_noise.service import (ModeScore, NoiseReport, OutsideKazanError,
+                                 SourceInfo)
 
 
 @pytest.fixture

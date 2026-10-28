@@ -4,7 +4,9 @@ from decimal import Decimal
 
 from ostrovok_helpers import load_fixture
 
-from ostrovok_scraper.parsing.reviews import parse_api_reviews, parse_page_reviews, parse_review_date
+from ostrovok_scraper.parsing.reviews import (parse_api_reviews,
+                                              parse_page_reviews,
+                                              parse_review_date)
 
 AUTHOR_FIELDS = {"author_name", "author_residency", "authorName", "authorResidency"}
 

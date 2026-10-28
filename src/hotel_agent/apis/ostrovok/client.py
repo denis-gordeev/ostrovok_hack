@@ -4,16 +4,12 @@ from typing import Self
 import psycopg
 from psycopg.rows import dict_row
 
-from hotel_agent.apis.ostrovok.models import (
-    City,
-    DataWindow,
-    HotelRecord,
-    OstrovokError,
-    RateTemplate,
-    SearchResult,
-    StaySearch,
-)
-from hotel_agent.apis.ostrovok.search import rank_hotels, resolve_city, room_occupancies, validate_search
+from hotel_agent.apis.ostrovok.models import (City, DataWindow, HotelRecord,
+                                              OstrovokError, RateTemplate,
+                                              SearchResult, StaySearch)
+from hotel_agent.apis.ostrovok.search import (rank_hotels, resolve_city,
+                                              room_occupancies,
+                                              validate_search)
 from hotel_agent.config import Settings
 
 _WINDOW_SQL = "SELECT key, value FROM ostrovok.meta WHERE key IN ('window_from', 'window_to', 'scraped_on')"

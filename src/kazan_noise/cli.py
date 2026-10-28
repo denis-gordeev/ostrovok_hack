@@ -16,8 +16,10 @@ from kazan_noise.fetch import fetch_all, load_raw
 from kazan_noise.grid import compute_grid, load_grid, save_grid
 from kazan_noise.overpass import OverpassClient, OverpassError
 from kazan_noise.service import NoiseReport, NoiseService, OutsideKazanError
-from kazan_noise.snapshot import SnapshotMissingError, save_features, write_meta
-from kazan_noise.validate import SanityCheck, load_hotels, sanity_checks, validate_hotels
+from kazan_noise.snapshot import (SnapshotMissingError, save_features,
+                                  write_meta)
+from kazan_noise.validate import (SanityCheck, load_hotels, sanity_checks,
+                                  validate_hotels)
 from ostrovok_scraper.config import ScraperConfig
 from ostrovok_scraper.store import connect
 

@@ -11,15 +11,9 @@ from shapely.geometry import Point, box
 from kazan_noise import cli
 from kazan_noise.cli import main
 from kazan_noise.service import ModeScore, NoiseReport, OutsideKazanError
-from kazan_noise.validate import (
-    HotelRow,
-    _forest_points,
-    is_noise_complaint,
-    load_hotels,
-    sanity_checks,
-    spearman,
-    validate_hotels,
-)
+from kazan_noise.validate import (HotelRow, _forest_points, is_noise_complaint,
+                                  load_hotels, sanity_checks, spearman,
+                                  validate_hotels)
 
 
 @pytest.mark.parametrize(

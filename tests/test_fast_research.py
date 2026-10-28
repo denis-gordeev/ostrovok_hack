@@ -4,7 +4,8 @@ from unittest.mock import patch
 
 import pytest
 import requests
-from langchain_core.language_models.fake_chat_models import FakeMessagesListChatModel
+from langchain_core.language_models.fake_chat_models import \
+    FakeMessagesListChatModel
 from langchain_core.messages import AIMessage
 from langchain_core.tools import tool
 
@@ -141,6 +142,7 @@ def test_exhausted_tool_budget_still_synthesizes_useful_partial_answer(monkeypat
 
 def test_noise_cache_reuses_individual_hotels_across_different_batches(tmp_path, monkeypatch):
     from types import SimpleNamespace
+
     from hotel_agent.tools.noise import NoisePoint
     from hotel_geo_tools import noise_payload
 
@@ -173,8 +175,9 @@ def test_noise_cache_reuses_individual_hotels_across_different_batches(tmp_path,
 
 
 def test_route_research_switches_to_calculation_only_after_verified_pois():
-    from agent import route_research_ready
     from langchain_core.messages import HumanMessage, ToolMessage
+
+    from agent import route_research_ready
 
     state = {
         "call_usage": {"by_tool": {"overpass_query": 8}},
@@ -202,9 +205,11 @@ def test_route_research_switches_to_calculation_only_after_verified_pois():
 
 
 def test_empty_history_summary_retains_current_task_and_tool_pairs():
-    from context_memory import summarize_safely
-    from langchain_core.messages import HumanMessage, ToolMessage
     from unittest.mock import Mock
+
+    from langchain_core.messages import HumanMessage, ToolMessage
+
+    from context_memory import summarize_safely
 
     messages = [
         HumanMessage("Туристический маршрут по Тяп-Ляп и отели", id="user"),

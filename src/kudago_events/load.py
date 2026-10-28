@@ -7,7 +7,8 @@ import psycopg
 from kudago_events.api import KudagoApi
 from kudago_events.config import MSK, KudagoConfig
 from kudago_events.parse import EventRow, parse_event
-from kudago_events.store import apply_migrations, connect, finish_load, last_ok_load, replace_events, start_load
+from kudago_events.store import (apply_migrations, connect, finish_load,
+                                 last_ok_load, replace_events, start_load)
 
 # Ключ pg_advisory_lock: одну загрузку за раз, даже если запущено несколько агентов.
 LOCK_KEY = 2026102801

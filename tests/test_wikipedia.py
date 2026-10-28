@@ -1,11 +1,19 @@
-import bz2, gzip, json, sqlite3, tempfile, unittest
+import bz2
+import gzip
+import json
+import sqlite3
+import tempfile
+import unittest
 from pathlib import Path
-import faiss, numpy as np
+
+import faiss
+import numpy as np
 from graph_retriever.strategies import Eager
 from langchain_graph_retriever import GraphRetriever
+
 from scripts.wiki_ingest import run, sql_rows, value
-from wiki_store import connect, add_text, set_meta
 from wiki_retrieval import WikipediaAdapter, wikipedia_edges
+from wiki_store import add_text, connect, set_meta
 
 
 class WikipediaTests(unittest.TestCase):

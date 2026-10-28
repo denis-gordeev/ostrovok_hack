@@ -19,15 +19,8 @@ from langchain_graph_retriever import GraphRetriever
 
 from retry_utils import retry_remote_call
 from wiki_embeddings import LocalRuBertEmbeddings
-from wiki_store import (
-    ClosingConnection,
-    article_url,
-    connect,
-    expression,
-    image_links,
-    metadata,
-    tokens,
-)
+from wiki_store import (ClosingConnection, article_url, connect, expression,
+                        image_links, metadata, tokens)
 
 
 def data_folder():
@@ -284,7 +277,8 @@ def summarize_wikipedia(result, purpose):
     documents = result.get("results", [result] if result.get("found") else [])
     if not documents:
         return result
-    from openai import APIConnectionError, APIStatusError, APITimeoutError, OpenAI
+    from openai import (APIConnectionError, APIStatusError, APITimeoutError,
+                        OpenAI)
 
     def fallback(kind, status=None):
         # Return retrieved evidence, never provider error text, credentials or prompts.

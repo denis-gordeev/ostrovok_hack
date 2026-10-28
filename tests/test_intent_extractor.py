@@ -1,6 +1,7 @@
 from datetime import date
 
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
+from langchain_core.messages import (AIMessage, HumanMessage, SystemMessage,
+                                     ToolMessage)
 from pydantic import BaseModel
 
 from hotel_agent.intents.extractor import IntentExtractor

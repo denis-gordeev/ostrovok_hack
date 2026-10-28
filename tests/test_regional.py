@@ -9,12 +9,12 @@ from pathlib import Path
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
+from test_transit import fixture
 
 from geo_api import app
 from geo_tools import walking_route
 from scripts.bustime_to_gtfs import convert
 from scripts.regional_schedules import merge, parse_innopolis
-from test_transit import fixture
 
 
 class RegionalTests(unittest.TestCase):

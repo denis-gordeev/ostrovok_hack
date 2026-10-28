@@ -2,7 +2,8 @@ import io
 import json
 
 import pytest
-from agent_helpers import KAZAN_RESULT, TODAY, FakeOstrovok, ScriptedChatModel, tatarstan_call, tool_result
+from agent_helpers import (KAZAN_RESULT, TODAY, FakeOstrovok,
+                           ScriptedChatModel, tatarstan_call, tool_result)
 from langchain_core.messages import AIMessage
 from langgraph.checkpoint.memory import InMemorySaver
 

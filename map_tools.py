@@ -2,8 +2,8 @@
 
 import hashlib
 import json
-import re
 import os
+import re
 import tempfile
 from pathlib import Path
 from typing import Annotated, Literal
@@ -326,7 +326,7 @@ def compose_routes(segments: list[dict], state: Annotated[dict, InjectedState]):
             raise ValueError("Segment contains no verified route lines")
         start, end = lines[0]["geometry"]["coordinates"][0], lines[-1]["geometry"]["coordinates"][-1]
         if previous_end is not None:
-            from math import radians, sin, cos, asin, sqrt
+            from math import asin, cos, radians, sin, sqrt
 
             lon1, lat1, lon2, lat2 = map(radians, [*previous_end, *start])
             distance = (

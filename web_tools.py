@@ -5,7 +5,7 @@ import json
 import os
 import tempfile
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError
+from concurrent.futures import ThreadPoolExecutor, TimeoutError, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlsplit

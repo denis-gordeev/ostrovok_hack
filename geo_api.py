@@ -12,8 +12,9 @@ from pydantic import BaseModel, Field, field_validator
 from shapely.geometry import Point
 
 from geo_tools import CACHE_DIR, OVERPASS_URL, cached_result, ox, search_osm
+from region_config import (BOUNDS, DATA_VERSION, MAX_DRIVE_DISTANCE_M,
+                           MAX_SEARCH_RADIUS_M, MAX_WALK_DISTANCE_M)
 from transit_routing import plan_transit
-from region_config import BOUNDS, DATA_VERSION, MAX_DRIVE_DISTANCE_M, MAX_WALK_DISTANCE_M, MAX_SEARCH_RADIUS_M
 
 # The imported extract includes surroundings and Kazan airport.
 LOCK = threading.Lock()

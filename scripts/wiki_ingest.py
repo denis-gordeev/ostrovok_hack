@@ -4,14 +4,23 @@ Run after wiki_download.py. Stages are restartable; corpus publication is atomic
 No arbitrary SQL from a dump is executed, no LLM or embedding service is called.
 """
 
-import argparse, bz2, gzip, json, re, sqlite3, sys, time, xml.etree.ElementTree as ET
+import argparse
+import bz2
+import gzip
+import json
+import re
+import sqlite3
+import sys
+import time
+import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import mwparserfromhell
-from wiki_store import connect, set_meta, add_text
+
+from wiki_store import add_text, connect, set_meta
 
 TUPLE = re.compile(r"\((?:[^'()]|'(?:[^'\\]|\\.)*')*\)")
 TOKEN = re.compile(r"'(?:[^'\\]|\\.)*'|NULL|-?\d+(?:\.\d+)?")

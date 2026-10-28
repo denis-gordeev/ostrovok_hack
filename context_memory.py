@@ -1,6 +1,7 @@
 """Keep task and paired tool calls when a generative history summary is empty."""
 
 import json
+
 from langchain_core.messages import ToolMessage
 
 

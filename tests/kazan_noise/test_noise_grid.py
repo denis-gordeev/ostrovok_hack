@@ -5,7 +5,8 @@ from noise_helpers import kazan_snapshot
 from shapely.geometry import box
 
 from kazan_noise.config import DAY, NoiseConfig
-from kazan_noise.grid import Grid, compute_grid, grid_cells, load_grid, save_grid
+from kazan_noise.grid import (Grid, compute_grid, grid_cells, load_grid,
+                              save_grid)
 from kazan_noise.scale import Scale, label
 from kazan_noise.snapshot import SnapshotMissingError
 

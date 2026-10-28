@@ -4,16 +4,9 @@ from dataclasses import replace
 
 import numpy as np
 import pytest
-from noise_helpers import (
-    FAR_FROM_ROAD,
-    KAZAN_LAT,
-    KAZAN_LON,
-    NEAR_ROAD,
-    ON_BUILDING,
-    kazan_snapshot,
-    scene_latlon,
-    scene_service,
-)
+from noise_helpers import (FAR_FROM_ROAD, KAZAN_LAT, KAZAN_LON, NEAR_ROAD,
+                           ON_BUILDING, kazan_snapshot, scene_latlon,
+                           scene_service)
 from shapely.geometry import LineString, Point, box
 
 from kazan_noise.config import DAY, NIGHT

@@ -5,15 +5,9 @@ import pytest
 from noise_helpers import osm_node, osm_relation, osm_way, raw_response
 from shapely.geometry import LineString
 
-from kazan_noise.features import (
-    build_features,
-    building_height,
-    parse_height,
-    parse_maxspeed,
-    rail_source,
-    road_source,
-    runway_sources,
-)
+from kazan_noise.features import (build_features, building_height,
+                                  parse_height, parse_maxspeed, rail_source,
+                                  road_source, runway_sources)
 from kazan_noise.weights import OFF
 
 LINE = LineString([(0, 0), (100, 0)])

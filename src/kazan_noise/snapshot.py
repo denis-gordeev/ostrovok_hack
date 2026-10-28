@@ -16,7 +16,8 @@ import numpy as np
 import shapely
 
 from kazan_noise import weights
-from kazan_noise.features import BuildReport, Features, Green, Obstacles, Source
+from kazan_noise.features import (BuildReport, Features, Green, Obstacles,
+                                  Source)
 
 FORMAT_VERSION = 1
 _REBUILD_HINT = "пересоберите: kazan-noise build && kazan-noise grid"

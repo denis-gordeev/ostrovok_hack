@@ -2,11 +2,12 @@ import json
 import unittest
 
 from langchain_core.messages import AIMessage, ToolMessage
+from langgraph.graph import END, START, StateGraph
 from langgraph.prebuilt import ToolNode
 from langgraph.prebuilt.tool_node import ToolInvocationError
-from langgraph.graph import START, END, StateGraph
 
-from map_tools import GeoState, collection, decode_polyline, feature, map_result, merge_layers, update_map
+from map_tools import (GeoState, collection, decode_polyline, feature,
+                       map_result, merge_layers, update_map)
 
 
 class MapTests(unittest.TestCase):

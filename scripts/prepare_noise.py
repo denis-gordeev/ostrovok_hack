@@ -3,15 +3,19 @@ Run inside the app image with CACHE_DIR mounted; raw responses are resumable.
 No object revision timestamps: stale construction cannot be removed by age.
 """
 
-import gzip, json, os
-from pathlib import Path
-import httpx
-from kazan_noise import queries
-from kazan_noise.features import build_features
-from kazan_noise.snapshot import save_features, write_meta
-from kazan_noise.config import NoiseConfig
-from kazan_noise.grid import compute_grid, save_grid
+import gzip
+import json
+import os
 from datetime import date
+from pathlib import Path
+
+import httpx
+
+from kazan_noise import queries
+from kazan_noise.config import NoiseConfig
+from kazan_noise.features import build_features
+from kazan_noise.grid import compute_grid, save_grid
+from kazan_noise.snapshot import save_features, write_meta
 
 folder = Path(os.getenv("KAZAN_NOISE_DATA_DIR", "/app/.cache/kazan_noise-v1"))
 raw = folder / "raw"

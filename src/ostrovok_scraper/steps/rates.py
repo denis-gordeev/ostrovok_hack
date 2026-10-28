@@ -2,15 +2,12 @@ from datetime import date
 
 from ostrovok_scraper.api import OstrovokApi
 from ostrovok_scraper.config import OTHER_GUESTS, ScraperConfig
-from ostrovok_scraper.domain import child_age_key, paxes_for_guests, pick_reference_night, rates_key
+from ostrovok_scraper.domain import (child_age_key, paxes_for_guests,
+                                     pick_reference_night, rates_key)
 from ostrovok_scraper.steps import Item, StepReport, run_items
-from ostrovok_scraper.steps.inputs import (
-    available_nights,
-    guests_hotels,
-    page_facts,
-    selected_hotels,
-    serp_hotels,
-)
+from ostrovok_scraper.steps.inputs import (available_nights, guests_hotels,
+                                           page_facts, selected_hotels,
+                                           serp_hotels)
 from ostrovok_scraper.store import RawStore
 
 CHILD_PROBE_PAXES = [{"adults": 2, "child_ages": [4]}]

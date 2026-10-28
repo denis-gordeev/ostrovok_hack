@@ -9,15 +9,9 @@ import shapely
 from shapely.geometry import LineString, Point, box
 
 from kazan_noise.features import Source
-from kazan_noise.propagation import (
-    SubSources,
-    discretize,
-    divergence_db,
-    energy_sum,
-    foliage_db,
-    path_difference,
-    shield_db,
-)
+from kazan_noise.propagation import (SubSources, discretize, divergence_db,
+                                     energy_sum, foliage_db, path_difference,
+                                     shield_db)
 
 
 def test_divergence():

@@ -62,6 +62,7 @@ app.mount(
 @app.get("/knowledge/status")
 def knowledge_status():
     import json
+
     from wiki_store import connect, metadata
 
     folder = Path(
