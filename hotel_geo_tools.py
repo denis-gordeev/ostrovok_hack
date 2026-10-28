@@ -122,7 +122,8 @@ async def find_hotels(request, client=None):
                        'Проверено до 30 кандидатов; found — число до фильтра шума. '
                        'Шум — относительная модель OSM, не децибелы и не замер в номере. '
                        'Для Казани кандидаты без проверки шума не рекомендуются; вне Казани шум не оценён.')
-    payload['source'] = 'ostrovok.ru snapshot'
+    payload['source'] = ('Снимок ostrovok.ru от ' + result.data_as_of.isoformat()
+                         if result.data_as_of else 'Снимок ostrovok.ru, дата неизвестна')
     payload['retrieved_at'] = datetime.now().astimezone().isoformat()
     features = [feature({'type': 'Point', 'coordinates': [h['lon'], h['lat']]},
                         name=h['name'], hotel_id=h['hotel_id'], price_per_night=h['price_per_night'],
