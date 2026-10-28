@@ -1,4 +1,23 @@
 services:
+  ostrovok-db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: ostrovok
+      POSTGRES_PASSWORD: ostrovok
+      POSTGRES_DB: ostrovok
+    ports:
+      - "127.0.0.1:${OSTROVOK_DB_PORT:-5433}:5432"
+    volumes:
+      - ostrovok-pgdata:/var/lib/postgresql/data
+      # 01 — тестовая база, 02-tools-data.sql.gz — снимок данных (scripts/tools-db.sh dump); выполняются на новом томе
+      - ./docker/initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      # По TCP: пока выполняется docker/initdb, Postgres слушает только сокет и готовым считаться не должен.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U ostrovok"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 2m
   overpass:
     image: wiktorn/overpass-api:0.7.62
     restart: unless-stopped
@@ -50,3 +69,6 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+
+volumes:
+  ostrovok-pgdata:

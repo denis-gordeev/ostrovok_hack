@@ -1,0 +1,20 @@
+{"total": 12, "ta_total": 2, "reviews": [
+  {"id": 2164782, "review_type": "ost", "review_date": "2026-06-10 10:19:32.134689+00", "rating": 10,
+   "detailed": {"cleanness": 10, "location": 10}, "review_plus": "Отель расположен в удобном месте.", "review_minus": "",
+   "order_context": {"adult_num": 2, "author_name": "Автор", "author_residency": "xx-xx",
+                     "author_room": "Двухместный номер на мансарде", "bedding_types": ["twin"],
+                     "check_in": "2026-06-07", "check_out": "2026-06-08"},
+   "traveller_type": "family", "trip_type": "leisure", "review_likes": 2,
+   "images": [{"tmpl": "https://cdn.ostrovok.ru/t/{size}/hotel_review/c3.JPEG"}], "reply": {"text": ""}},
+  {"id": 378605, "review_type": "ost", "review_date": "2021-05-12 06:42:23.080211+00", "rating": 7.3,
+   "detailed": {"cleanness": 7}, "review_plus": "Чисто, свежо, комфортно.", "review_minus": "Забыли убраться в номере.",
+   "order_context": {"adult_num": 2, "author_name": "Автор", "author_residency": "xx-xx"},
+   "traveller_type": "couple", "trip_type": "leisure", "review_likes": 0, "images": [],
+   "reply": {"text": "Спасибо за отзыв!"}},
+  {"id": 555001, "review_type": "ost", "review_date": "2023-06-01 08:00:00.000000+00", "rating": 9,
+   "detailed": {"cleanness": 9}, "review_plus": "Хорошо.", "review_minus": "",
+   "order_context": {"adult_num": 1, "author_name": "Автор", "author_residency": "xx-xx",
+                     "check_in": "2023-05-27 00:00:00+00", "check_out": "2023-05-29 00:00:00+00"},
+   "traveller_type": "solo", "trip_type": "business", "review_likes": 0, "images": [], "reply": {"text": ""}},
+  {"review_type": "ost", "review_date": "2021-01-01 00:00:00+00", "rating": 5}
+]}

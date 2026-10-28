@@ -1,10 +1,14 @@
-.venv/
 .env
-.cache/
+.venv/
 __pycache__/
 *.pyc
-.langgraph_api/
+.pytest_cache/
 data/
+traces/
+.DS_Store
+.superpowers/
+.cache/
+.langgraph_api/
 .mypy_cache/
 .secrets/
 web/node_modules/

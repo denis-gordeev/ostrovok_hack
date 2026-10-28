@@ -1,0 +1,50 @@
+{
+  "hotel": {
+    "id": "don_kikhot_hotel_", "masterId": "6479652", "name": "Отель Дон Кихот",
+    "facts": {"kind": "HOTEL"},
+    "contacts": {"email": "hotel@example.com", "phone": "+7 000 000-00-00"},
+    "location": {"address": "улица Бурхана Шахиди, 11, Казань", "latitude": 55.78732681274414,
+                 "longitude": 49.10508346557617, "regionId": 1993,
+                 "nearestSubways": [{"distance": 877, "name": "Кремлёвская", "cityId": 1993}]},
+    "rating": {"total": 8.9, "reviewsCount": 336,
+               "ostrovok": {"detailedRatings": {"cleanness": 9.23, "location": 9.38}}},
+    "descriptionStruct": [{"title": "Расположение", "paragraphs": ["Семейный отель «Дон Кихот» расположен в Казани."]}],
+    "amenityGroups": [{"amenities": [{"amenityId": 23, "name": "Кондиционер", "isFree": 0}]}],
+    "serpFilters": ["HAS_INTERNET", "HAS_PARKING", "HAS_PETS"],
+    "paymentMethods": ["VISA", "CASH", "MIR"],
+    "images": [{"tmpl": "https://cdn.ostrovok.ru/t/{size}/h1.JPEG"}, {"tmpl": "https://cdn.ostrovok.ru/t/{size}/h2.JPEG"},
+               {"tmpl": "https://cdn.ostrovok.ru/t/{size}/h3.JPEG"}, {"tmpl": "https://cdn.ostrovok.ru/t/{size}/h4.JPEG"},
+               {"tmpl": "https://cdn.ostrovok.ru/t/{size}/h5.JPEG"}, {"tmpl": "https://cdn.ostrovok.ru/t/{size}/h6.JPEG"}],
+    "policies": {
+      "checkInCheckOut": {"type": "CHECK_IN_CHECK_OUT", "value": {
+        "checkInTimeStart": {"hours": 14, "minutes": 0}, "checkInTimeEnd": null,
+        "checkOutTimeStart": null, "checkOutTimeEnd": {"hours": 12, "minutes": 0}}},
+      "extraBed": {"type": "EXTRA_BED", "value": [{"price": 1600, "priceUnit": "PER_GUEST_PER_NIGHT"}]},
+      "children": {"type": "CHILDREN", "value": []},
+      "visa": null, "noShow": null
+    },
+    "roomGroups": [
+      {"rgHash": "3202302", "parentRgHash": "3202", "size": 25, "roomAmenityData": ["desk", "private-bathroom"],
+       "nameStruct": {"mainName": "Двухместный номер Первой категории", "beddingType": "двуспальная кровать", "bathroom": ""},
+       "images": [{"tmpl": "https://cdn.ostrovok.ru/t/{size}/r1.JPEG"}]},
+      {"rgHash": "320240200004", "parentRgHash": "3202", "size": 25, "roomAmenityData": [],
+       "nameStruct": {"mainName": "Двухместный номер Первой категории Мансарда", "beddingType": "2 отдельные кровати", "bathroom": ""},
+       "images": []}
+    ]
+  },
+  "hotelRegionData": {"regionId": 1993, "name": "Казань", "nameEn": "Kazan", "type": "CITY",
+                      "center": {"lat": 55.79612731933594, "lng": 49.106414794921875},
+                      "countryCode": "RU", "catalogSlug": "russia/kazan"},
+  "reviews": {"total": 2, "list": [
+    {"id": 1952999, "reviewDate": "2025-08-01 09:00:00+00", "rating": 9, "detailed": {"cleanness": 9},
+     "reviewPlus": "Удобное расположение.", "reviewMinus": "", "reply": [], "travellerType": "COUPLE",
+     "tripType": "LEISURE", "reviewLikes": 0, "images": [],
+     "orderContext": {"adultNum": 2, "childNum": 0, "authorName": "Автор", "authorResidency": "xx-xx",
+                      "authorRoom": "Двухместный номер Первой категории"}},
+    {"id": 1315975, "reviewDate": "2024-02-11 18:30:00.5+00", "rating": 8, "detailed": {"cleanness": 8},
+     "reviewPlus": "Вкусные завтраки.", "reviewMinus": "Шумно.", "reply": ["Спасибо!"],
+     "travellerType": "FAMILY", "tripType": "LEISURE", "reviewLikes": 1,
+     "images": [{"tmpl": "https://cdn.ostrovok.ru/t/{size}/rv1.JPEG"}],
+     "orderContext": {"adultNum": 2, "childNum": 1, "authorName": "Автор", "authorResidency": "xx-xx"}}
+  ]}
+}
