@@ -8,12 +8,12 @@ from pathlib import Path
 
 import networkx as nx
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from shapely.geometry import Point
 
 from geo_tools import CACHE_DIR, OVERPASS_URL, cached_result, ox, search_osm
 from transit_routing import plan_transit
-from region_config import BOUNDS, DATA_VERSION, MAX_DRIVE_DISTANCE_M, MAX_WALK_DISTANCE_M
+from region_config import BOUNDS, DATA_VERSION, MAX_DRIVE_DISTANCE_M, MAX_WALK_DISTANCE_M, MAX_SEARCH_RADIUS_M
 
 # The imported extract includes surroundings and Kazan airport.
 LOCK = threading.Lock()
@@ -27,8 +27,13 @@ class Coordinates(BaseModel):
 
 class FeatureRequest(Coordinates):
     tags: dict[str, str | list[str] | bool]
-    radius_m: int = Field(default=1000, ge=1, le=5000)
+    radius_m: int = Field(default=1000, ge=1, description='Search radius in meters; capped at 15000.')
     limit: int = Field(default=30, ge=1, le=100)
+
+    @field_validator('radius_m')
+    @classmethod
+    def cap_radius(cls, value: int) -> int:
+        return min(value, MAX_SEARCH_RADIUS_M)
 
 
 class RouteRequest(BaseModel):

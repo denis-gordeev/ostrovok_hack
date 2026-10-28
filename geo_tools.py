@@ -19,7 +19,7 @@ from shapely.geometry import Point, shape
 
 from map_tools import collection, decode_polyline, feature, map_result, read_geo_result, update_map
 from wiki_retrieval import wikipedia_search, wikipedia_article
-from region_config import BOUNDS, DATA_VERSION, MAX_WALK_DISTANCE_M
+from region_config import BOUNDS, DATA_VERSION, MAX_WALK_DISTANCE_M, MAX_SEARCH_RADIUS_M
 from retry_utils import geo_post, retry_remote_call
 
 load_dotenv()
@@ -88,8 +88,8 @@ def cached_result(kind, params, compute):
 def validate_point(lat, lon, radius_m):
     if not (-90 <= lat <= 90 and -180 <= lon <= 180):
         raise ValueError("Invalid latitude/longitude")
-    if not 1 <= radius_m <= 5000:
-        raise ValueError("radius_m must be between 1 and 5000")
+    if not 1 <= radius_m <= MAX_SEARCH_RADIUS_M:
+        raise ValueError(f"radius_m must be between 1 and {MAX_SEARCH_RADIUS_M}")
 
 
 def error_message(exc: Exception) -> str:
@@ -108,7 +108,6 @@ def overpass_query(query: str, limit: int = 30) -> dict:
     """
     if not 1 <= limit <= 100:
         raise ValueError("limit must be between 1 and 100")
-
     if re.search(r'\(\s*(?:south|west|north|east)\s*=\s*-?\d', query):
         raise ValueError('Invalid Overpass bbox: use positional numbers (south,west,north,east), '
                          'for example (55.30,48.20,56.35,49.85), without parameter names or = signs.')
@@ -151,8 +150,10 @@ def search_osm(
     {"highway":["primary","secondary"]}, {"amenity":"pharmacy"}.
     Multiple tag keys use OR, not AND. Search is a square bbox with radius_m
     half-side, then filtered to the radius. Distances are NOT walking routes.
+    radius_m must be positive; values above 15000 meters are capped at 15000.
     Missing OSM features do not prove absence in reality.
     """
+    radius_m = min(radius_m, MAX_SEARCH_RADIUS_M)
     validate_point(lat, lon, radius_m)
     if not tags or not 1 <= limit <= 100:
         raise ValueError("Provide tags and limit between 1 and 100")
@@ -187,7 +188,8 @@ def search_osm(
     data = collection([feature(row['geometry'], name=row['tags'].get('name', 'Объект без названия'),
                                center=row['center'], url=row['url'], distance_m=row['distance_m']) for row in shown])
     return map_result({**result, "features": [{k:v for k,v in row.items() if k != 'geometry'} for row in shown],
-                       "total": len(features), "truncated": len(features) > limit}, {'default': data})
+                       "total": len(features), "truncated": len(features) > limit,
+                       "radius_m": radius_m}, {'default': data})
 
 
 @tool(response_format='content_and_artifact')
