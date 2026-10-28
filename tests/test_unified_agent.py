@@ -107,3 +107,15 @@ def test_shared_agent_search_updates_map_with_same_history(tmp_path,monkeypatch)
     assert len(exact['locations'])==2
     assert exact['locations'][0]['name']=='Отель 2'
     assert state['messages'][-1].content=='Подходящий отель показан на карте.'
+
+
+def test_missing_events_returns_explicit_unavailability_not_no_events():
+    from hotel_geo_tools import events_in_kazan
+    from hotel_agent.apis.kudago.models import EventsError
+    from unittest.mock import AsyncMock
+    client=AsyncMock()
+    client.events_for_stay.side_effect=EventsError('not loaded')
+    with patch('hotel_geo_tools.EventsClient.from_settings',return_value=client):
+        result=events_in_kazan.invoke({'checkin':'2026-11-19','checkout':'2026-11-22'})
+    assert result['available'] is False
+    assert 'не означает' in result['note']

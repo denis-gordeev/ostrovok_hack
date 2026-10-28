@@ -12,7 +12,8 @@ from langchain_core.tools import tool
 
 from hotel_agent.apis.kudago.client import EventsClient
 from hotel_agent.apis.ostrovok.client import OstrovokClient
-from hotel_agent.apis.ostrovok.models import StaySearch
+from hotel_agent.apis.ostrovok.models import StaySearch, OstrovokError
+from hotel_agent.apis.kudago.models import EventsError
 from hotel_agent.config import Settings
 from hotel_agent.dates import today_in_moscow
 from hotel_agent.tools.events import StayDates, EventDetailsArgs
@@ -135,7 +136,12 @@ def search_hotels_in_tatarstan(**params):
     оставляет только проверенные отели с дневным И ночным шумом не выше 50/100,
     сортирует по тишине. Возвращает data_ref для карты. В других городах шум не оценён.
     """
-    return asyncio.run(find_hotels(StaySearch(**params)))
+    try:
+        return asyncio.run(find_hotels(StaySearch(**params)))
+    except OstrovokError as exc:
+        note = str(exc) if exc.__cause__ is None else 'Поиск отелей временно недоступен.'
+        return map_result({'hotels': [], 'available': False, 'note': note},
+                          {'default': collection([])})
 
 
 @tool(args_schema=NoiseArgs)
@@ -150,16 +156,23 @@ def noise_in_kazan(**params):
 def events_in_kazan(**params):
     """События Казани из снимка KudaGo на даты поездки. Сохраняй ссылки url и дату данных."""
     args = StayDates(**params)
-    return asyncio.run(EventsClient.from_settings(Settings()).events_for_stay(args.checkin, args.checkout)).model_dump(mode='json')
+    try:
+        return asyncio.run(EventsClient.from_settings(Settings()).events_for_stay(args.checkin, args.checkout)).model_dump(mode='json')
+    except EventsError:
+        return {'available': False, 'events': [], 'exhibitions': [],
+                'note': 'События Казани недоступны в сохранённых данных; это не означает, что событий нет.'}
 
 
 @tool(args_schema=EventDetailsArgs)
 def kazan_event_details(**params):
     """Подробности события KudaGo по id из events_in_kazan; даты поездки необязательны."""
     args = EventDetailsArgs(**params)
-    return asyncio.run(EventsClient.from_settings(Settings()).event_details(
-        args.event_id, checkin=args.checkin if args.checkout else None,
-        checkout=args.checkout if args.checkin else None, today=today_in_moscow())).model_dump(mode='json')
+    try:
+        return asyncio.run(EventsClient.from_settings(Settings()).event_details(
+            args.event_id, checkin=args.checkin if args.checkout else None,
+            checkout=args.checkout if args.checkin else None, today=today_in_moscow())).model_dump(mode='json')
+    except EventsError:
+        return {'available': False, 'note': 'Сведения об этом событии недоступны в сохранённых данных.'}
 
 
 HOTEL_TOOLS = [search_hotels_in_tatarstan, noise_in_kazan, events_in_kazan, kazan_event_details]
