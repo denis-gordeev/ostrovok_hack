@@ -16,7 +16,7 @@ FROM python:3.12-slim-bookworm
 RUN useradd --create-home --uid 10001 app
 WORKDIR /app
 COPY --from=build /app/.venv /app/.venv
-COPY --chown=app:app agent.py agent_limits.py geo_tools.py geo_api.py transit_routing.py map_tools.py ui_api.py region_config.py wiki_store.py wiki_embeddings.py wiki_retrieval.py retry_utils.py langgraph_app.py langgraph.json langgraph.server.json ./
+COPY --chown=app:app hotel_geo_tools.py agent.py agent_limits.py geo_tools.py geo_api.py transit_routing.py map_tools.py ui_api.py region_config.py wiki_store.py wiki_embeddings.py wiki_retrieval.py retry_utils.py langgraph_app.py langgraph.json langgraph.server.json ./
 COPY --from=web --chown=app:app /web/dist ./web/dist
 RUN mkdir -p /app/.cache && chown app:app /app/.cache
 ENV PATH="/app/.venv/bin:$PATH" PYTHONUNBUFFERED=1 CACHE_DIR=/app/.cache

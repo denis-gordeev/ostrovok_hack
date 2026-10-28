@@ -19,6 +19,9 @@ services:
     env_file:
       - ./.env
     environment:
+      OSTROVOK_DB_DSN: postgresql://ostrovok:ostrovok@ostrovok-db:5432/ostrovok
+      KUDAGO_DB_DSN: postgresql://ostrovok:ostrovok@ostrovok-db:5432/ostrovok
+      KAZAN_NOISE_DATA_DIR: /app/.cache/kazan_noise-v1
       OVERPASS_URL: http://overpass/api
       OSMNX_API_URL: http://app:8080
       EMBEDDINGS_URL: http://embeddings:8082
@@ -29,6 +32,8 @@ services:
       - ./.cache/langgraph:/app/.langgraph_api
       - ./.cache/server:/app/.cache
     depends_on:
+      ostrovok-db:
+        condition: service_healthy
       overpass:
         condition: service_healthy
     healthcheck:
