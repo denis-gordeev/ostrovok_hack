@@ -1,27 +1,34 @@
 """Run: uv run python agent.py 'Найди парки рядом с 55.7961, 49.1064'"""
 
 import argparse
-import os
 import json
+import os
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from langchain_core.messages import SystemMessage, HumanMessage, ToolMessage
+from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
-from langgraph.graph import START, END, StateGraph
+from langgraph.graph import END, START, StateGraph
 from langgraph.prebuilt import ToolNode, tools_condition
 
-from geo_tools import TOOLS as GEO_TOOLS, error_message
+from geo_tools import TOOLS as GEO_TOOLS
+from geo_tools import error_message
 from hotel_geo_tools import HOTEL_TOOLS
-from web_tools import search_web
 from map_tools import compose_routes
+from web_tools import search_web
 
 TOOLS = [*GEO_TOOLS, *HOTEL_TOOLS, search_web, compose_routes]
+from agent_limits import (
+    CallLimits,
+    limit_result,
+    reserve_model,
+    reserve_tools,
+    start_turn,
+)
+from context_memory import summarize_safely
 from map_tools import GeoState, collect_geo_results
 from retry_utils import REMOTE_RETRY_POLICY, retry_remote_call
-from context_memory import summarize_safely
-from agent_limits import CallLimits, start_turn, reserve_model, reserve_tools, limit_result
 
 SYSTEM_PROMPT = """Ты помощник по путешествиям: отели, окружение, маршруты и события. Регион прототипа — Казанская
 агломерация: Казань, аэропорт, Иннополис, Зеленодольск, остров-град Свияжск и
@@ -261,13 +268,17 @@ SYSTEM_PROMPT += """
   Не затирай предыдущие участки очередным участком в одном слое. Если нужна
   непрерывная поездка на общественном транспорте, следующий departure_time
   зависит от прибытия предыдущего участка: такие этапы рассчитывай последовательно.
-- Для Тяп-Ляп: контекст исторический, а не обещание музейной экскурсии. Найденное
-  сегодня здание школы/завода не доказывает его связь с группировкой или совпадение
-  исторического адреса. Не придумывай памятники, достопримечательности и границы.
-  Участки с неподтверждённой исторической связью помечай или исключай из тура.
-  Достаточно полезного подтверждённого маршрута по доступным местам; отсутствие
-  одной точки не должно блокировать остальные части задачи.
+- Не пытайся сразу показывать финальные варианты маршруты, точки и отели, показывай промежуточные результаты в том числе и на карте.
+- Если даты отеля не указаны, то в любом случае покажи на карте отели на одни сутки с завтрашнего дня на 2 взрослых и 1 номер, но скажи, что нужна точная дата.
+- Если ночь и общественный транспорт уже не ходит, покажи общественный транспорт для завтрашнего дня.
 """
+
+USE_LIMITS = os.getenv("USE_LIMITS", True)
+USE_SEARCH_TOOL = os.getenv("USE_SEARCH_TOOL", True)
+USE_REMEMBER_TOOL = os.getenv("USE_REMEMBER_TOOL", True)
+
+if not USE_SEARCH_TOOL:
+    TOOLS = [t for t in TOOLS if t is not search_web]
 
 
 def route_research_ready(state):
@@ -300,7 +311,8 @@ def route_research_ready(state):
 def build_agent(model=None, *, summary_model=None, checkpointer=None):
     from langmem.short_term import SummarizationNode
 
-    limits = CallLimits.from_env()
+    if USE_LIMITS:
+        limits = CallLimits.from_env()
     if model is None:
         if not os.getenv("LLM_API_KEY"):
             raise ValueError("Set LLM_API_KEY in .env (see .env.example)")
@@ -464,17 +476,22 @@ def build_agent(model=None, *, summary_model=None, checkpointer=None):
         response = response.model_copy(update={"tool_calls": []})
         return {"messages": [*stopped["messages"][:-1], response], "call_usage": usage}
 
-    graph.add_node("limit", finish_partial)
-    graph.add_node("remember_results", prepare_model)
+    if USE_LIMITS:
+        graph.add_node("limit", finish_partial)
+    if USE_REMEMBER_TOOL:
+        graph.add_node("remember_results", prepare_model)
     graph.add_node("summarize", lambda state: summarize_safely(summarizer, state), retry_policy=REMOTE_RETRY_POLICY)
     graph.add_edge(START, "start_turn")
-    graph.add_edge("start_turn", "remember_results")
-    graph.add_conditional_edges("remember_results", budget_route, {"limit": "limit", "continue": "summarize"})
+    if USE_REMEMBER_TOOL:
+        graph.add_edge("start_turn", "remember_results")
+        graph.add_conditional_edges("remember_results", budget_route, {"limit": "limit", "continue": "summarize"})
     graph.add_edge("summarize", "agent")
     graph.add_conditional_edges("agent", tools_condition, {"tools": "check_tools", END: END})
     graph.add_conditional_edges("check_tools", budget_route, {"limit": "limit", "continue": "tools"})
-    graph.add_edge("limit", END)
-    graph.add_edge("tools", "remember_results")
+    if USE_LIMITS:
+        graph.add_edge("limit", END)
+    if USE_REMEMBER_TOOL:
+        graph.add_edge("tools", "remember_results")
     return graph.compile(checkpointer=checkpointer).with_config(
         {
             "max_concurrency": max(1, min(16, int(os.getenv("AGENT_MAX_CONCURRENCY", "8")))),

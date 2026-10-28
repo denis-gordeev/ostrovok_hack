@@ -12,12 +12,12 @@ from threading import RLock
 from langchain_core.tools import tool
 
 from hotel_agent.apis.kudago.client import EventsClient
-from hotel_agent.apis.ostrovok.client import OstrovokClient
-from hotel_agent.apis.ostrovok.models import StaySearch, OstrovokError
 from hotel_agent.apis.kudago.models import EventsError
+from hotel_agent.apis.ostrovok.client import OstrovokClient
+from hotel_agent.apis.ostrovok.models import OstrovokError, StaySearch
 from hotel_agent.config import Settings
 from hotel_agent.dates import today_in_moscow
-from hotel_agent.tools.events import StayDates, EventDetailsArgs
+from hotel_agent.tools.events import EventDetailsArgs, StayDates
 from hotel_agent.tools.noise import NoiseArgs, assess_points
 from kazan_noise.config import NoiseConfig
 from kazan_noise.service import NoiseService
@@ -124,6 +124,7 @@ def select_quiet_hotels(hotels, assessment):
 
 
 async def find_hotels(request, client=None):
+    print("request", request)
     client = client or OstrovokClient.from_settings(Settings())
     expanded = request.model_copy(update={"limit": 30})
     result = await client.search_hotels(expanded, today=today_in_moscow())
