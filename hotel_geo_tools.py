@@ -6,7 +6,7 @@ import os
 from datetime import date, datetime
 from functools import lru_cache
 from pathlib import Path
-from threading import Lock
+from threading import RLock
 
 from langchain_core.tools import tool
 
@@ -24,7 +24,7 @@ from kazan_noise.snapshot import SnapshotMissingError
 from map_tools import collection, feature, map_result
 
 NOISE_LIMIT = 50
-_noise_lock = Lock()
+_noise_lock = RLock()
 
 
 @lru_cache(maxsize=1)
@@ -35,8 +35,9 @@ def _load_noise(path, features_mtime, grid_mtime):
 def noise_service():
     cfg = NoiseConfig()
     try:
-        return _load_noise(str(cfg.data_dir.resolve()), cfg.features_path.stat().st_mtime_ns,
-                           cfg.grid_path.stat().st_mtime_ns)
+        with _noise_lock:
+            return _load_noise(str(cfg.data_dir.resolve()), cfg.features_path.stat().st_mtime_ns,
+                               cfg.grid_path.stat().st_mtime_ns)
     except (OSError, ValueError, SnapshotMissingError):
         return None
 
@@ -56,7 +57,19 @@ def noise_payload(points):
     with _noise_lock:
         if path.exists():
             return json.loads(path.read_text())
-        result = {'available': True, **json.loads(assess_points(service, points))}
+        point_files = [folder / ('point-'+hashlib.sha256(json.dumps([identity,p.model_dump()],sort_keys=True).encode()).hexdigest()+'.json')
+                       for p in points]
+        missing = [p for p,path in zip(points,point_files) if not path.exists()]
+        if missing:
+            fresh = json.loads(assess_points(service, missing))
+            for p,report in zip(missing,fresh['points'],strict=True):
+                point_path = folder / ('point-'+hashlib.sha256(json.dumps([identity,p.model_dump()],sort_keys=True).encode()).hexdigest()+'.json')
+                value = {**{k:v for k,v in fresh.items() if k!='points'},'point':report}
+                temporary = point_path.with_suffix('.tmp')
+                temporary.write_text(json.dumps(value,ensure_ascii=False));temporary.replace(point_path)
+        values = [json.loads(p.read_text()) for p in point_files]
+        result = {'available': True, 'points':[v['point'] for v in values],
+                  **({k:v for k,v in values[0].items() if k!='point'} if values else {})}
         # Serialized under lock; the rename keeps interrupted writes out of readers.
         temporary = path.with_suffix('.tmp')
         temporary.write_text(json.dumps(result, ensure_ascii=False)); temporary.replace(path)
