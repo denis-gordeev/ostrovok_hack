@@ -32,9 +32,13 @@ REMOTE_RETRY_POLICY = RetryPolicy(
 )
 
 
-def retry_remote_call(operation):
+def retry_remote_call(operation, *, max_attempts=None):
     """Use the same retry budget for operations also called outside LangGraph."""
     policy = REMOTE_RETRY_POLICY
+    if max_attempts is not None:
+        if not 1 <= max_attempts <= 10:
+            raise ValueError("max_attempts must be between 1 and 10")
+        policy = policy._replace(max_attempts=max_attempts)
     return RunnableLambda(lambda _: operation()).with_retry(
         retry_if_exception_type=is_transient_error,
         stop_after_attempt=policy.max_attempts,
@@ -45,7 +49,7 @@ def retry_remote_call(operation):
     ).invoke(None)
 
 
-def geo_post(*args, **kwargs):
+def geo_post(*args, max_attempts=None, **kwargs):
     """Only read-only geographic POSTs belong here; never retry mutations."""
     def send():
         response = requests.post(*args, **kwargs)
@@ -54,7 +58,7 @@ def geo_post(*args, **kwargs):
         return response
 
     try:
-        return retry_remote_call(send)
+        return retry_remote_call(send, max_attempts=max_attempts)
     except requests.HTTPError as exc:
         # Preserve callers' domain-specific final-error handling (e.g. OTP 503).
         if exc.response is not None:

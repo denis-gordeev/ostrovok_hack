@@ -116,16 +116,20 @@ def overpass_query(query: str, limit: int = 30) -> dict:
         response = geo_post(
             f"{OVERPASS_URL}/interpreter", data={"data": query}, timeout=TIMEOUT,
             headers={"User-Agent": "ostrovok-geo-agent/0.1 (OSM research prototype)"},
+            max_attempts=1,
         )
         response.raise_for_status()
         data = response.json()
+        if data.get("remark") and any(word in data['remark'].lower() for word in ('timed out', 'timeout')):
+            raise requests.Timeout('Overpass query timed out; incomplete results discarded')
         if data.get("remark"):
             raise ValueError(f"Overpass returned incomplete data: {data['remark']}")
         if "elements" not in data:
             raise ValueError("Expected JSON with elements; use [out:json]")
         return {"elements": data["elements"], "osm_base": data.get("osm3s", {}).get("timestamp_osm_base")}
 
-    result = cached_result("overpass", [OVERPASS_URL, query], fetch)
+    result = cached_result("overpass", [OVERPASS_URL, query],
+                           lambda: retry_remote_call(fetch, max_attempts=int(os.getenv("OVERPASS_MAX_ATTEMPTS", "6"))))
     elements = result.pop("elements")
     shown = elements[:limit]
     points = []
