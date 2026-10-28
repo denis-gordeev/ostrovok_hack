@@ -21,6 +21,7 @@ services:
     environment:
       OVERPASS_URL: http://overpass/api
       OSMNX_API_URL: http://app:8080
+      EMBEDDINGS_URL: http://embeddings:8082
       OVERPASS_RATE_LIMIT: "false"
       REQUEST_TIMEOUT: "120"
       LANGSMITH_TRACING: "false"

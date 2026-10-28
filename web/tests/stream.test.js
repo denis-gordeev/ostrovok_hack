@@ -1,6 +1,12 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {readSSE, humanText, mergeLayers, technicalPreview} from '../src/stream.js';
+import {readSSE, humanText, mergeLayers, technicalPreview, isVisibleModelStream} from '../src/stream.js';
+
+test('only agent model output is shown; internal summaries stay hidden', () => {
+  assert.equal(isVisibleModelStream({langgraph_node:'summarize'}),false);
+  assert.equal(isVisibleModelStream({tags:['context_summary']}),false);
+  assert.equal(isVisibleModelStream({langgraph_node:'agent'}),true);
+});
 
 test('SSE handles arbitrary UTF-8 chunks, comments, CRLF and multiple events',async () => {
   const wire=new TextEncoder().encode(': keepalive\r\n\r\nevent: updates\r\ndata: {"text":"Казань"}\r\n\r\nevent: metadata\ndata: {"run_id":"r1"}\n\n');

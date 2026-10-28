@@ -37,7 +37,7 @@ docker compose -f docker-compose.yml -f deploy/compose.langgraph.yml -f deploy/c
 ```
 
 Compose автоматически поднимается после перезапуска Docker. Данные хранятся
-в `data/overpass/`, исходная вырезка — `data/extract/`, геокэш — `.cache/server/`,
+в `data/overpass-agglomeration-v1/`, исходная вырезка — `data/extract/`, геокэш — `.cache/server/`,
 история LangGraph — `.cache/langgraph/`. Эти каталоги не коммитятся.
 Это dev-сервер LangGraph для прототипа; одновременно выполняется один запуск.
 Трассировка LangSmith отключена; Studio размещён у LangSmith.
@@ -75,10 +75,13 @@ journalctl -u langgraph-cert-renew.service
 
 ## Данные и API
 
-Перенесена вырезка со старого стенда. Границы: west=48.75, south=55.55,
-east=49.55, north=56.10; Казань и аэропорт. Последние изменения объектов:
-`2026-10-24T19:09:38Z`. PBF: 20 096 009 байт, контрольная сумма в
-`data/extract/SHA256SUMS`. Импорт Overpass выполняется заново из этого PBF.
+Активна вырезка Казанской агломерации из ПФО Geofabrik: west=48.20,
+south=55.30, east=49.85, north=56.35. Казань, аэропорт, Иннополис,
+Зеленодольск и Свияжск. PBF `data/extract/agglomeration-v1.osm.pbf`,
+контрольная сумма `data/extract/agglomeration-v1.SHA256SUMS`.
+`osmium check-refs` не нашёл отсутствующих узлов дорог.
+Старые городские данные сохранены для отката.
+Подробности: [региональные маршруты](../docs/regional-routing.md).
 Метаданные, репликация и Overpass areas отключены; запросы через bbox,
 координаты и OSM IDs. Данные © OpenStreetMap contributors:
 https://www.openstreetmap.org/copyright.
@@ -124,6 +127,6 @@ OpenRouter с нового VPS доступен. Пробное продлени
 ## Общественный транспорт
 
 Добавлен локальный OpenTripPlanner и `POST /transit/route`; агент использует
-инструмент `transit_route`. Данные и GTFS лежат в `data/transit/`.
-Промежуточные времена расчётные, календарь модели действует до 24.11.2026.
+инструмент `transit_route`. Данные и GTFS лежат в `data/transit-regional-v1/`.
+Промежуточные времена расчётные, календарь модели действует до 25.11.2026.
 Инструкция: [../docs/transit.md](../docs/transit.md).

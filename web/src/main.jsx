@@ -3,7 +3,7 @@ import {createRoot} from 'react-dom/client';
 import {marked} from 'marked';
 import DOMPurify from 'dompurify';
 import {MapView} from './MapView.jsx';
-import {readSSE, textContent, humanText, mergeLayers, technicalPreview, toolLabels, traceFromMessages} from './stream.js';
+import {readSSE, textContent, humanText, mergeLayers, technicalPreview, toolLabels, traceFromMessages, isVisibleModelStream} from './stream.js';
 import './style.css';
 
 const THREAD_KEY = 'ostrovok-thread';
@@ -70,11 +70,12 @@ function App() {
     if (event === 'metadata') run.current = {...run.current, id:data.run_id};
     if (event === 'error') throw new Error('Агент не смог завершить запрос. Попробуйте уточнить задачу.');
     if (event === 'debug') {
+      if (['summarize','remember_results'].includes(data.payload?.name)) return;
       setDebug(previous => [...previous, {id:crypto.randomUUID(), event:data.type || event, text:technicalPreview(data)}].slice(-150));
     }
     if (event === 'messages') {
-      const [message] = data;
-      if (message) receiveMessage(message, true);
+      const [message, metadata] = data;
+      if (message && isVisibleModelStream(metadata)) receiveMessage(message, true);
     }
     if (event === 'updates') for (const update of Object.values(data)) {
       if (!update || typeof update !== 'object') continue;
@@ -122,7 +123,7 @@ function App() {
       run.current={thread:id};
       const response=await api(`/threads/${id}/runs/stream`,{
         assistant_id:'geo_agent', input:{messages:[{id:messageId,role:'human',content:query+context}]},
-        config:{recursion_limit:30,max_concurrency:1},
+        config:{max_concurrency:1},
         stream_mode:['updates','messages-tuple','debug'],
         on_disconnect:'cancel',
       },abort.current.signal);

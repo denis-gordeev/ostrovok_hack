@@ -27,7 +27,7 @@ def plan_transit(start_lat, start_lon, end_lat, end_lon, at=None):
     metadata = json.loads((DATA_DIR / 'kazan.gtfs.json').read_text())
     if not metadata['calendar_start'] <= at.date().isoformat() <= metadata['calendar_end']:
         raise ValueError(f"Departure date outside model calendar {metadata['calendar_start']}..{metadata['calendar_end']}")
-    params = [OTP_URL,metadata['gtfs_sha256'],start_lat,start_lon,end_lat,end_lon,at.isoformat(),2]
+    params = [OTP_URL,metadata['gtfs_sha256'],start_lat,start_lon,end_lat,end_lon,at.isoformat(),3]
     CACHE_DIR.mkdir(parents=True,exist_ok=True)
     path = CACHE_DIR / (hashlib.sha256(json.dumps(params).encode()).hexdigest() + '.json')
     if path.exists():
@@ -37,7 +37,7 @@ def plan_transit(start_lat, start_lon, end_lat, end_lon, at=None):
         origin: {location: {coordinate: {latitude: START_LAT, longitude: START_LON}}}
         destination: {location: {coordinate: {latitude: END_LAT, longitude: END_LON}}}
         dateTime: {earliestDeparture: DEPARTURE}
-        modes: {direct: [WALK], transit: {transit: [{mode: BUS}, {mode: TRAM}, {mode: SUBWAY}]}}
+        modes: {direct: [WALK], transit: {transit: [{mode: BUS}, {mode: TRAM}, {mode: SUBWAY}, {mode: RAIL}]}}
         first: 3
       ) { edges { node { start end legs {
         mode
@@ -71,6 +71,7 @@ def plan_transit(start_lat, start_lon, end_lat, end_lon, at=None):
                 'to':{k:leg['to'][k] for k in ('name','lat','lon')},
                 'departure_time':dep,'arrival_time':arr,
                 'geometry':leg.get('legGeometry'),
+                'limitations':metadata.get('route_limitations',{}).get(route['gtfsId'].rsplit(':',1)[-1],[]) if route else [],
             })
         transit_count = sum(leg['mode'] != 'WALK' for leg in legs)
         itineraries.append({
@@ -82,13 +83,15 @@ def plan_transit(start_lat, start_lon, end_lat, end_lon, at=None):
         })
     result = {
         'itineraries':itineraries,'requested_departure_time':at.isoformat(),'estimated':True,
-        'source':'Bustime-derived GTFS + OpenStreetMap; local OpenTripPlanner',
+        'source':'Regional GTFS (Bustime and published operator timetables) + OpenStreetMap; local OpenTripPlanner',
+        'additional_sources':metadata.get('additional_sources',[]),
+        'supplemental_note':metadata.get('supplemental_note'),
         'source_url':metadata['source_url'],'source_retrieved_at':metadata['retrieved_at'],
         'retrieved_at':datetime.now(MOSCOW).isoformat(),'feed_sha256':metadata['gtfs_sha256'],
         'calendar_start':metadata['calendar_start'],'calendar_end':metadata['calendar_end'],
         'coverage':{'routes':metadata['routes'],'stops':metadata['stops']},
         'limitations':[
-            'Prototype, not an official timetable. Only source departures are retained; intermediate and final times are modelled.',
+            'Prototype with incomplete coverage. Bustime intermediate/final times and 407 arrival are modelled; 106/108 endpoint times are published.',
             'Weekly service masks projected onto a local calendar; public holidays and cancellations are unknown. No live vehicle data.',
             'OSM walking access and transfers; no wheelchair-accessibility guarantee. Feed coverage is incomplete.',
         ],
@@ -106,8 +109,14 @@ def plan_transit(start_lat, start_lon, end_lat, end_lon, at=None):
 def route_link(gtfs_id):
     # Stable link from route ID back to the actual source route; no inferred names.
     try:
+        route_id = gtfs_id.rsplit(':',1)[-1]
+        metadata = json.loads((DATA_DIR / 'kazan.gtfs.json').read_text())
+        if route_id in metadata.get('route_sources',{}):
+            url = metadata['route_sources'][route_id]
+            # One route includes both weekday and weekend trips; link to the full timetable.
+            return url.split('?',1)[0] if 'innopolis.com/ru/city/bus-schedule' in url else url
         snapshot = json.loads((DATA_DIR / 'bustime-source.json').read_text())
-        row = snapshot['bus'][gtfs_id.rsplit(':',1)[-1]]
+        row = snapshot['bus'][route_id]
         slug = row[snapshot['bus__meta']['fields'].index('slug')]
         return f'https://ru.busti.me/kazan/{slug}/'
     except (FileNotFoundError,KeyError,ValueError):

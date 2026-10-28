@@ -26,7 +26,7 @@ class MapTests(unittest.TestCase):
 
     def test_tool_artifact_keeps_geometry_out_of_model_content(self):
         self.assertNotIn('coordinates',json.dumps(self.content))
-        self.assertEqual(self.content['data_ref'],map_result({}, {'default':self.geometry})[0]['data_ref'])
+        self.assertEqual(self.content['data_ref'],map_result({'source':'OSM'}, {'default':self.geometry})[0]['data_ref'])
         schema=update_map.tool_call_schema.model_json_schema()['properties']
         self.assertNotIn('state',schema)
         self.assertNotIn('tool_call_id',schema)
@@ -55,6 +55,22 @@ class MapTests(unittest.TestCase):
         self.assertIn('not terrain visibility',update['messages'][0].content)
         with self.assertRaises(ToolInvocationError):
             self.invoke('upsert',data_ref=self.content['data_ref'],kind='cones',height_m=-1)
+
+    def test_labels_toggle_preserves_verified_layer_and_does_not_move_camera(self):
+        update = self.invoke('upsert', data_ref=self.content['data_ref'], feature_indices=[0])
+        original = update['map_layers']['parks']
+        self.assertTrue(original['show_labels'])
+        self.state['map_layers'] = {'parks': {**original, 'visible': False}}
+        hidden = self.invoke('set_labels', show_labels=False)
+        self.assertEqual(hidden['map_layers']['parks'],
+                         {**original, 'visible': False, 'show_labels': False})
+        self.assertNotIn('map_camera', hidden)
+        self.assertFalse(json.loads(hidden['messages'][0].content)['show_labels'])
+        self.state['map_layers'] = hidden['map_layers']
+        shown = self.invoke('set_labels', show_labels=True)
+        self.assertTrue(shown['map_layers']['parks']['show_labels'])
+        disabled = self.invoke('upsert', data_ref=self.content['data_ref'], show_labels=False)
+        self.assertFalse(disabled['map_layers']['parks']['show_labels'])
 
     def test_route_polyline_coordinate_order(self):
         self.assertEqual(decode_polyline('_p~iF~ps|U_ulLnnqC_mqNvxq`@'),

@@ -43,3 +43,21 @@ def tile(kind: str, z: int, x: int, y: int):
 
 app.mount('/ui', StaticFiles(directory=Path(__file__).parent / 'web' / 'dist', html=True,
                             check_dir=False), name='map-ui')
+
+@app.get('/knowledge/status')
+def knowledge_status():
+    import json
+    from wiki_store import connect, metadata
+    folder = Path(os.getenv('WIKIPEDIA_DATA_DIR', str(Path(os.getenv('CACHE_DIR', '.cache')) / 'wikipedia' / 'ruwiki-20261001')))
+    result = {'corpus_ready': (folder / 'corpus.sqlite').exists(), 'semantic_ready': False}
+    for filename, key in [('status.json', 'corpus_build'), ('embedding-status.json', 'embedding_build')]:
+        path = folder / filename
+        if path.exists():
+            result[key] = json.loads(path.read_text())
+    result['semantic_ready'] = ((folder / 'index.json').exists()
+                                and result.get('embedding_build', {}).get('phase') == 'complete')
+    if result['corpus_ready']:
+        with connect(folder / 'corpus.sqlite', readonly=True) as con:
+            info = metadata(con)
+        result.update({k: info.get(k) for k in ('snapshot', 'counts', 'build_status')})
+    return result

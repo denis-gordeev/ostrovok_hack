@@ -7,6 +7,7 @@ import io
 import json
 import math
 import re
+import sys
 import zipfile
 from collections import Counter, defaultdict
 from datetime import date, datetime, timedelta, timezone
@@ -14,13 +15,14 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from shapely.geometry import LineString, Point
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from region_config import BOUNDS, DATA_VERSION
 
 SOURCE_URL = 'https://sel.bustm.net/static/other/db/v8/current/10.json'
-BOUNDS = (48.75, 55.55, 49.55, 56.10)
-ROUTE_TYPES = {0: 3, 1: 11, 2: 0, 7: 1}
-SPEEDS_KMH = {0: 18, 1: 16, 2: 16, 7: 32}
+ROUTE_TYPES = {0: 3, 1: 11, 2: 0, 5: 3, 6: 2, 7: 1}
+SPEEDS_KMH = {0: 18, 1: 16, 2: 16, 5: 35, 6: 45, 7: 32}
 DWELL_SECONDS = 20
-VERSION = 1
+VERSION = 2
 
 
 def rows(data, table):
@@ -149,7 +151,7 @@ def convert(source, output, start_date, days=30):
     stamp = datetime.now(timezone.utc).isoformat()
     digest = hashlib.sha256(raw).hexdigest()
     report = {
-        'schema_version': VERSION, 'source_url': SOURCE_URL, 'source_sha256': digest,
+        'schema_version': VERSION, 'data_version': DATA_VERSION, 'source_url': SOURCE_URL, 'source_sha256': digest,
         'retrieved_at': datetime.fromtimestamp(Path(source).stat().st_mtime, timezone.utc).isoformat(),
         'generated_at': stamp, 'estimated': True, 'timezone': 'Europe/Moscow',
         'calendar_start': start_date.isoformat(), 'calendar_end': end_date.isoformat(),

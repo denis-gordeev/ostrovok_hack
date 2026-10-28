@@ -4,6 +4,8 @@ import hashlib
 import json
 import os
 import tempfile
+from concurrent.futures import ThreadPoolExecutor
+from typing import Literal
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -14,7 +16,10 @@ from dotenv import load_dotenv
 from langchain_core.tools import tool
 from shapely.geometry import Point, shape
 
-from map_tools import collection, decode_polyline, feature, map_result, update_map
+from map_tools import collection, decode_polyline, feature, map_result, read_geo_result, update_map
+from wiki_retrieval import wikipedia_search, wikipedia_article
+from region_config import BOUNDS, DATA_VERSION, MAX_WALK_DISTANCE_M
+from retry_utils import geo_post, retry_remote_call
 
 load_dotenv()
 CACHE_DIR = Path(os.getenv("CACHE_DIR", ".cache")).resolve()
@@ -43,14 +48,14 @@ def cacheable_response(response):
 # Includes GET/POST responses (Overpass, OSMnx and any requests-based tile
 # downloads). Never caches LLM requests: langchain-openai uses httpx.
 requests_cache.install_cache(
-    str(CACHE_DIR / "http"),
+    str(CACHE_DIR / f"http-{DATA_VERSION}"),
     backend="sqlite",
     allowable_methods=("GET", "POST"),
     expire_after=-1,
     filter_fn=cacheable_response,
 )
 ox.settings.use_cache = True
-ox.settings.cache_folder = str(CACHE_DIR / "osmnx")
+ox.settings.cache_folder = str(CACHE_DIR / 'osmnx' / DATA_VERSION)
 ox.settings.overpass_url = OVERPASS_URL
 ox.settings.requests_timeout = TIMEOUT
 ox.settings.overpass_rate_limit = os.getenv("OVERPASS_RATE_LIMIT", "true").lower() == "true"
@@ -58,7 +63,7 @@ ox.settings.overpass_rate_limit = os.getenv("OVERPASS_RATE_LIMIT", "true").lower
 
 def cached_result(kind, params, compute):
     """Persist successful derived results, including the original fetch date."""
-    key = hashlib.sha256(json.dumps(params, sort_keys=True).encode()).hexdigest()
+    key = hashlib.sha256(json.dumps([DATA_VERSION, params], sort_keys=True).encode()).hexdigest()
     folder = CACHE_DIR / kind
     folder.mkdir(parents=True, exist_ok=True)
     path = folder / f"{key}.json"
@@ -67,6 +72,7 @@ def cached_result(kind, params, compute):
     result = {
         **compute(),
         "retrieved_at": datetime.now(timezone.utc).isoformat(),
+        "snapshot_id": DATA_VERSION,
         "source": "OpenStreetMap / Overpass API",
         "endpoint": OVERPASS_URL,
     }
@@ -101,7 +107,7 @@ def overpass_query(query: str, limit: int = 30) -> dict:
         raise ValueError("limit must be between 1 and 100")
 
     def fetch():
-        response = requests.post(
+        response = geo_post(
             f"{OVERPASS_URL}/interpreter", data={"data": query}, timeout=TIMEOUT,
             headers={"User-Agent": "ostrovok-geo-agent/0.1 (OSM research prototype)"},
         )
@@ -122,6 +128,7 @@ def overpass_query(query: str, limit: int = 30) -> dict:
         if center:
             points.append(feature({'type': 'Point', 'coordinates': [center['lon'], center['lat']]},
                                   name=element.get('tags', {}).get('name', 'Объект без названия'),
+                                  location_kind='point' if 'lat' in element else 'osm_center',
                                   url=f"https://www.openstreetmap.org/{element['type']}/{element['id']}"))
     return map_result({**result, "elements": shown, "total": len(elements), "truncated": len(elements) > limit},
                       {'default': collection(points)})
@@ -145,7 +152,7 @@ def search_osm(
 
     def fetch():
         try:
-            features = ox.features_from_point((lat, lon), tags, dist=radius_m)
+            features = retry_remote_call(lambda: ox.features_from_point((lat, lon), tags, dist=radius_m))
         except ox._errors.InsufficientResponseError:
             return {"features": [], "coverage_note": "No matching data returned by OSM."}
         projected = ox.projection.project_gdf(features)
@@ -186,8 +193,32 @@ def walking_route(start_lat: float, start_lon: float, end_lat: float, end_lon: f
     the tool response; POST /route returns full GeoJSON for map clients.
     Use coordinates provided by the user or obtained from OSM, never invent them.
     """
-    response = requests.post(
-        f"{OSMNX_API_URL}/route",
+    return _street_route('/route', 'Пеший маршрут', 'WALK', start_lat, start_lon, end_lat, end_lon)
+
+
+@tool(response_format='content_and_artifact')
+def driving_route(start_lat: float, start_lon: float, end_lat: float, end_lon: float) -> dict:
+    """Find a car route in Kazan on the directed OSMnx drive network.
+    Use known user/OSM coordinates; endpoints must be within the Kazan bbox and
+    at most 150 km apart in a straight line. Includes Sviyazhsk village/station,
+    Innopolis and Zelenodolsk. Minimizes estimated free-flow time
+    using OSM maxspeed or assumed speeds by road class. NO live traffic, signal
+    delays, parking, turn-restriction relations or conditional restrictions.
+    This is a geographic prototype, not turn-by-turn driving navigation.
+    Endpoint snap offsets (max 300 m) are excluded and do not guarantee car access.
+    Returns length_m, estimated_minutes, limitations and data_ref for update_map.
+    Always disclose estimated time without traffic; do not claim all turns legal.
+    Endpoint street/district names and parking are NOT returned or verified.
+    Do not infer them from coordinates: describe travel between the given points.
+    """
+    return _street_route('/drive/route', 'Автомобильный маршрут', 'CAR', start_lat, start_lon, end_lat, end_lon)
+
+
+def _street_route(path, title, mode, start_lat, start_lon, end_lat, end_lon):
+    if mode == 'WALK' and ox.distance.great_circle(start_lat,start_lon,end_lat,end_lon) > MAX_WALK_DISTANCE_M:
+        raise ValueError('Walking route over 10 km is outside prototype limits; use driving/transit for regional trips.')
+    response = geo_post(
+        f"{OSMNX_API_URL}{path}",
         json={
             "start": {"lat": start_lat, "lon": start_lon},
             "end": {"lat": end_lat, "lon": end_lon},
@@ -201,7 +232,7 @@ def walking_route(start_lat: float, start_lon: float, end_lat: float, end_lon: f
     geometry = result.pop("geometry", None)
     result["http_cache_hit"] = bool(getattr(response, "from_cache", False))
     return map_result(result, {'default': collection([
-        *([feature(geometry, name='Пеший маршрут', mode='WALK')] if geometry else []),
+        *([feature(geometry, name=title, mode=mode)] if geometry else []),
         feature({'type':'Point', 'coordinates':[start_lon,start_lat]}, name='Начало маршрута'),
         feature({'type':'Point', 'coordinates':[end_lon,end_lat]}, name='Конец маршрута'),
     ])})
@@ -210,7 +241,7 @@ def walking_route(start_lat: float, start_lon: float, end_lat: float, end_lon: f
 @tool(response_format='content_and_artifact')
 def transit_route(start_lat: float, start_lon: float, end_lat: float, end_lon: float,
                   departure_time: str | None = None) -> dict:
-    """Plan public transport and walking in Kazan with local OpenTripPlanner.
+    """Plan public transport, regional rail and walking in the Kazan agglomeration.
     Coordinates must come from the user or OSM. Optional departure_time is ISO
     8601 with timezone, e.g. 2026-10-27T09:00:00+03:00; omit for now.
     Returns routes, boarding/alighting stops, times and transfers. This is a
@@ -218,8 +249,11 @@ def transit_route(start_lat: float, start_lon: float, end_lat: float, end_lon: f
     times, incomplete coverage, no public-holiday calendar or realtime data.
     Always state these limits. If contains_transit=false, it is a walking-only
     alternative, not public transport. Empty results do not prove no service.
+    Regional 106/108/407 use published endpoint schedules, without intermediate
+    boarding. Their geometry is road-modelled; 407 operating days are unconfirmed.
+    Always explain any returned per-leg limitations and cite the route source URL.
     """
-    response = requests.post(f'{OSMNX_API_URL}/transit/route', json={
+    response = geo_post(f'{OSMNX_API_URL}/transit/route', json={
         'start':{'lat':start_lat,'lon':start_lon},
         'end':{'lat':end_lat,'lon':end_lon},'departure_time':departure_time,
     },timeout=TIMEOUT)
@@ -242,4 +276,71 @@ def transit_route(start_lat: float, start_lon: float, end_lat: float, end_lon: f
     return map_result(result, variants)
 
 
-TOOLS = [overpass_query, search_osm, walking_route, transit_route, update_map]
+@tool(response_format='content_and_artifact')
+def plan_route(start_lat: float, start_lon: float, end_lat: float, end_lon: float,
+               modes: list[Literal['walk', 'car', 'transit']] | None = None,
+               departure_time: str | None = None) -> dict:
+    """Compare routes between verified user/OSM coordinates in Kazan region.
+    Omit modes for automatic walk+transit (car+transit beyond 10 km straight-line).
+    For an explicit user choice pass only the requested modes: walk, car, transit.
+    departure_time is optional ISO 8601 with timezone; omit for now.
+    Returns independent results/errors by mode, primary_mode and primary_variant.
+    Walking is primary only below 1000 m path length; transit must contain actual
+    transit and is ranked by total_minutes_from_requested_departure including wait.
+    Use returned map_variants with update_map; geometry stays in the artifact.
+    Preserve all per-mode/per-leg sources and limitations: car time excludes traffic
+    and turn restrictions; transit is modelled, incomplete, no realtime/holidays,
+    and bus 407 operating days are unconfirmed. Failure does not prove no service.
+    """
+    selected = list(dict.fromkeys(modes if modes is not None else
+        (['car', 'transit'] if ox.distance.great_circle(
+            start_lat, start_lon, end_lat, end_lon) > MAX_WALK_DISTANCE_M
+         else ['walk', 'transit'])))
+    if not selected or any(mode not in ('walk', 'car', 'transit') for mode in selected):
+        raise ValueError('Provide at least one valid route mode')
+    args = dict(start_lat=start_lat, start_lon=start_lon, end_lat=end_lat, end_lon=end_lon)
+
+    def calculate(mode):
+        try:
+            tool = {'walk': walking_route, 'car': driving_route, 'transit': transit_route}[mode]
+            content, artifact = tool.func(**args, **({'departure_time': departure_time} if mode == 'transit' else {}))
+            return content, artifact
+        except Exception as exc:
+            return {'error': error_message(exc)}, None
+
+    results, variants = {}, {}
+    with ThreadPoolExecutor(max_workers=min(5, len(selected))) as executor:
+        for mode, (content, artifact) in zip(selected, executor.map(calculate, selected)):
+            content = {k: v for k, v in content.items()
+                       if k not in ('data_ref', 'map_variants', 'map_feature_count')}
+            results[mode] = content
+            if artifact:
+                variants.update({f'{mode}-{key}': value for key, value in artifact['collections'].items()})
+    transit = [(i, item) for i, item in enumerate(results.get('transit', {}).get('itineraries', []), 1)
+               if item.get('contains_transit') is True]
+    best = min(transit, key=lambda pair: pair[1]['total_minutes_from_requested_departure']) if transit else None
+    walk = results.get('walk', {})
+    primary = None
+    if len(selected) == 1:
+        mode = selected[0]
+        if mode == 'transit':
+            primary = 'transit' if best else None
+        elif 'error' not in results[mode]:
+            primary = mode
+    elif walk.get('length_m', float('inf')) < 1000:
+        primary = 'walk'
+    elif best:
+        primary = 'transit'
+    elif 'car' in results and 'error' not in results['car']:
+        primary = 'car'
+    elif 'length_m' in walk:
+        primary = 'walk'
+    primary_variant = (f'transit-option-{best[0]}' if primary == 'transit'
+                       else f'{primary}-default' if primary else None)
+    return map_result({'results': results, 'primary_mode': primary,
+                       'primary_variant': primary_variant,
+                       'transit_available': bool(best),
+                       'best_transit_variant': f'transit-option-{best[0]}' if best else None}, variants)
+
+
+TOOLS = [overpass_query, search_osm, plan_route, wikipedia_search, wikipedia_article, read_geo_result, update_map]

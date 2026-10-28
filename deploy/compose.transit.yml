@@ -6,7 +6,7 @@ services:
     environment:
       JAVA_TOOL_OPTIONS: -Xmx4g -XX:ActiveProcessorCount=2
     volumes:
-      - ./data/transit:/var/opentripplanner:ro
+      - ./data/transit-regional-v1:/var/opentripplanner:ro
     ports:
       - "127.0.0.1:8090:8080"
     mem_limit: 5g
@@ -26,7 +26,7 @@ services:
       OTP_URL: http://otp:8080
       TRANSIT_DATA_DIR: /app/transit-data
     volumes:
-      - ./data/transit:/app/transit-data:ro
+      - ./data/transit-regional-v1:/app/transit-data:ro
     depends_on:
       otp:
         condition: service_healthy

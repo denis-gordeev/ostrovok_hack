@@ -1,12 +1,12 @@
 import React, {useEffect, useRef, useState} from 'react';
 import maplibregl from 'maplibre-gl';
 import {MapboxOverlay} from '@deck.gl/mapbox';
-import {GeoJsonLayer} from '@deck.gl/layers';
+import {GeoJsonLayer, TextLayer} from '@deck.gl/layers';
 import {SimpleMeshLayer} from '@deck.gl/mesh-layers';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 const rgb = color => color.match(/[a-f0-9]{2}/gi).map(v => parseInt(v, 16));
-const transportColors = {WALK: [100,116,139], BUS: [37,99,235], TRAM: [219,92,39], SUBWAY: [126,62,190]};
+const transportColors = {WALK: [100,116,139], CAR: [217,119,6], BUS: [37,99,235], TRAM: [219,92,39], SUBWAY: [126,62,190], RAIL:[190,24,93]};
 
 // Unit cone, base at z=0 and tip at z=1. Scaled in metres by the layer.
 function coneMesh() {
@@ -44,6 +44,7 @@ export function MapView({layers, camera, onVisibility, onRemove, onSelect, selec
   const container = useRef(), map = useRef(), overlay = useRef(), selection = useRef();
   const [ready, setReady] = useState(false), [terrain, setTerrain] = useState(false);
   const [error, setError] = useState('');
+  const [viewRevision, setViewRevision] = useState(0);
   const selectHandler = useRef(onSelect);
   selectHandler.current = onSelect;
   useEffect(() => {
@@ -76,6 +77,7 @@ export function MapView({layers, camera, onVisibility, onRemove, onSelect, selec
     overlay.current = deck;
     instance.addControl(deck);
     instance.on('load', () => setReady(true));
+    instance.on('move', () => setViewRevision(value => value + 1));
     instance.on('error', () => setError('Часть карты не загрузилась. Попробуйте изменить масштаб.'));
     instance.on('click', e => {
       selection.current?.remove();
@@ -88,22 +90,52 @@ export function MapView({layers, camera, onVisibility, onRemove, onSelect, selec
   useEffect(() => {if (!selectedPoint) selection.current?.remove();}, [selectedPoint]);
   useEffect(() => {
     if (!ready) return;
-    const deckLayers = Object.values(layers).filter(l => l.visible).map(layer => {
+    const occupied = [];
+    const metrics = document.createElement('canvas').getContext('2d');
+    metrics.font = '600 13px Arial, sans-serif';
+    const deckLayers = Object.values(layers).filter(l => l.visible).flatMap(layer => {
       const color = rgb(layer.color);
-      if (layer.kind === 'cones') return new SimpleMeshLayer({
+      const geometry = layer.kind === 'cones' ? new SimpleMeshLayer({
         id:layer.id, data:layer.data.features, mesh, pickable:true,
         getPosition:f => [...f.geometry.coordinates.slice(0,2), map.current.queryTerrainElevation(f.geometry.coordinates) || 0],
         getScale:[layer.radius_m,layer.radius_m,layer.height_m], getColor:[...color,160],
         material:{ambient:0.6,diffuse:0.7,shininess:20},
-      });
-      return new GeoJsonLayer({id:layer.id, data:layer.data, pickable:true, filled:true, stroked:true,
+      }) : new GeoJsonLayer({id:layer.id, data:layer.data, pickable:true, filled:true, stroked:true,
         getFillColor:[...color,100], getLineColor:f => transportColors[f.properties.mode] || color,
         getPointRadius:7, pointRadiusUnits:'pixels', getLineWidth:4, lineWidthUnits:'pixels',
         pointRadiusMinPixels:5, getElevation:0,
       });
+      if (layer.show_labels === false) return [geometry];
+      const labels = layer.data.features.filter(f =>
+        typeof f.properties?.name === 'string' && f.properties.name.trim() &&
+        (f.geometry?.type === 'Point' ||
+          (!['LineString', 'MultiLineString'].includes(f.geometry?.type) && Array.isArray(f.properties?.center)))).filter(f => {
+          const coordinates = f.geometry.type === 'Point' ? f.geometry.coordinates : f.properties.center;
+          const point = map.current.project(coordinates.slice(0,2));
+          const box = {left:point.x + 10, top:point.y - 10,
+            right:point.x + 14 + metrics.measureText(f.properties.name.trim()).width, bottom:point.y + 10};
+          const canvas = map.current.getCanvas();
+          if (box.right < 0 || box.left > canvas.clientWidth || box.bottom < 0 || box.top > canvas.clientHeight) return false;
+          if (occupied.some(other => box.left < other.right && box.right > other.left &&
+            box.top < other.bottom && box.bottom > other.top)) return false;
+          occupied.push(box);
+          return true;
+        });
+      return [geometry, new TextLayer({
+        id:`${layer.id}:labels`, data:labels, pickable:false,
+        getPosition:f => {
+          const coordinates = f.geometry.type === 'Point' ? f.geometry.coordinates : f.properties.center;
+          return [...coordinates.slice(0,2), map.current.queryTerrainElevation(coordinates.slice(0,2)) || 0];
+        },
+        getText:f => f.properties.name.trim(),
+        getSize:13, sizeUnits:'pixels', fontFamily:'Arial, sans-serif', fontWeight:600,
+        characterSet:'auto', fontSettings:{sdf:true}, getColor:[36,55,47], outlineWidth:2, outlineColor:[255,255,255,255],
+        getTextAnchor:'start', getAlignmentBaseline:'center', getPixelOffset:[12,0],
+        billboard:true, parameters:{depthCompare:'always'},
+      })];
     });
     overlay.current.setProps({layers:deckLayers});
-  }, [layers, ready, terrain]);
+  }, [layers, ready, terrain, viewRevision]);
   useEffect(() => {
     if (!ready || !camera?.layer_id || !layers[camera.layer_id]) return;
     const bounds = boundsFor(layers[camera.layer_id]);
@@ -134,7 +166,7 @@ export function MapView({layers, camera, onVisibility, onRemove, onSelect, selec
         }}>{layer.title}{layer.illustrative && <small>Иллюстрация · не зона видимости</small>}</button>
         <button className="icon-button" disabled={busy} aria-label={`Удалить ${layer.title}`} onClick={() => onRemove(layer)}>×</button>
       </div>)}
-      <div className="map-legend"><span>● Места</span><span>━ Транспорт</span><span>━ Пешком — серым</span></div>
+      <div className="map-legend"><span>● Места</span><span>━ Транспорт</span><span style={{color:'#d97706'}}>━ Авто</span><span>━ Пешком — серым</span></div>
     </div>
     {error && <button className="map-error" onClick={() => setError('')}>{error} ×</button>}
   </section>;

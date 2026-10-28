@@ -3,6 +3,9 @@
 import hashlib
 import json
 import re
+import os
+import tempfile
+from pathlib import Path
 from typing import Annotated, Literal
 from uuid import uuid4
 
@@ -27,6 +30,10 @@ def merge_layers(current: dict, changes: dict) -> dict:
 class GeoState(MessagesState):
     map_layers: Annotated[dict, merge_layers]
     map_camera: Annotated[dict, lambda old, new: new]
+    geo_results: Annotated[dict, merge_layers]
+    context: dict
+    summarized_messages: list
+    call_usage: dict
 
 
 def feature(geometry, **properties):
@@ -38,12 +45,88 @@ def collection(features):
 
 
 def map_result(content: dict, variants: dict):
-    """Stable refs survive checkpoints; geometry is only in the ToolMessage artifact."""
-    digest = hashlib.sha256(json.dumps(variants, sort_keys=True).encode()).hexdigest()[:24]
+    """Persist exact values and provenance independently of conversation summaries."""
+    # A new source date must not silently overwrite an older verified result.
+    payload = {'result': content, 'collections': variants}
+    digest = hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()[:24]
     ref = f'map-{digest}'
-    return ({**content, 'data_ref': ref, 'map_variants': list(variants),
-             'map_feature_count': {key:len(value['features']) for key,value in variants.items()}},
-            {'data_ref': ref, 'collections': variants})
+    result = {**content, 'data_ref': ref, 'map_variants': list(variants),
+              'map_feature_count': {key:len(value['features']) for key,value in variants.items()}}
+    artifact = {'data_ref': ref, 'collections': variants, 'result': result}
+    folder = Path(os.getenv('CACHE_DIR', '.cache')) / 'verified-results'
+    folder.mkdir(parents=True, exist_ok=True)
+    path = folder / f'{ref}.json'
+    if not path.exists():
+        with tempfile.NamedTemporaryFile(mode='w', dir=folder, delete=False) as handle:
+            temporary = Path(handle.name)
+            try:
+                json.dump(artifact, handle, ensure_ascii=False)
+            except BaseException:
+                temporary.unlink(missing_ok=True)
+                raise
+        temporary.replace(path)
+    return result, artifact
+
+
+def collect_geo_results(state):
+    """Checkpoint verified artifacts before any history compaction."""
+    known = state.get('geo_results', {})
+    results = {}
+    for message in state.get('messages', []):
+        if not isinstance(message, ToolMessage) or not isinstance(message.artifact, dict):
+            continue
+        artifact = message.artifact
+        ref = artifact.get('data_ref')
+        if ref and ref not in known and 'collections' in artifact:
+            # Also migrate checkpoints made before result metadata lived in artifacts.
+            if 'result' not in artifact:
+                artifact = {**artifact, 'result': json.loads(message.content)}
+            results[ref] = artifact
+    return {'geo_results': results}
+
+
+def find_geo_result(state, data_ref):
+    artifact = state.get('geo_results', {}).get(data_ref)
+    if artifact is not None:
+        return artifact
+    # Backwards compatibility for old checkpoints and direct ToolNode clients.
+    return next((m.artifact for m in reversed(state.get('messages', []))
+                 if isinstance(m, ToolMessage) and isinstance(m.artifact, dict)
+                 and m.artifact.get('data_ref') == data_ref), None)
+
+
+@tool
+def read_geo_result(data_ref: str, state: Annotated[dict, InjectedState],
+                    variant: str = 'default', feature_index: int | None = None) -> dict:
+    """Read exact coordinates, dates and sources from a VERIFIED conversation result.
+    Use after summarization instead of reconstructing facts from a summary.
+    Optional feature_index (0-based) selects one object in a map variant.
+    Coordinates are WGS84; representative points are not entrances.
+    No arbitrary file paths or results from other conversations are accepted.
+    """
+    artifact = find_geo_result(state, data_ref)
+    if artifact is None:
+        raise ValueError('Unknown data_ref in this conversation')
+    data = artifact['collections'].get(variant)
+    if data is None:
+        raise ValueError('Unknown map variant')
+    features = data['features']
+    if feature_index is not None:
+        if not 0 <= feature_index < len(features):
+            raise ValueError('feature_index is out of range')
+        indices = [feature_index]
+    else:
+        indices = range(len(features))
+    locations = []
+    for index in indices:
+        item = features[index]
+        point = item['geometry']['type'] == 'Point'
+        coordinates = item['geometry']['coordinates'] if point else item['properties'].get('center')
+        if coordinates is not None:
+            locations.append({'feature_index': index, **item['properties'], 'location': {
+                'lat': coordinates[1], 'lon': coordinates[0], 'crs': 'EPSG:4326',
+                'kind': item['properties'].get('location_kind', 'point' if point else 'representative_point')}})
+    return {'data_ref': data_ref, 'result': artifact.get('result', {}), 'locations': locations}
 
 
 def decode_polyline(encoded: str):
@@ -72,7 +155,7 @@ def decode_polyline(encoded: str):
 
 @tool
 def update_map(
-    operation: Literal['upsert', 'remove', 'clear', 'focus', 'hide', 'show'],
+    operation: Literal['upsert', 'remove', 'clear', 'focus', 'hide', 'show', 'set_labels'],
     layer_id: str,
     state: Annotated[dict, InjectedState],
     tool_call_id: Annotated[str, InjectedToolCallId],
@@ -85,6 +168,7 @@ def update_map(
     radius_m: Annotated[float, Field(ge=1, le=5000)] = 150,
     height_m: Annotated[float, Field(ge=1, le=3000)] = 100,
     feature_indices: list[int] | None = None,
+    show_labels: bool = True,
 ) -> Command:
     """Control the user map using VERIFIED data from an earlier tool's data_ref.
     upsert adds/replaces a layer; choose a map_variants key from that result.
@@ -94,6 +178,10 @@ def update_map(
     dimensions; disclose defaults if absent. Never invent locations or elevation.
     focus frames an existing layer; hide/show toggles it; remove deletes it;
     clear deletes all layers (layer_id may be any nonempty name).
+    show_labels controls point/location labels (default true), using only verified
+    feature properties.name; unnamed objects have no label. Lines are not labeled.
+    set_labels changes show_labels on an existing layer without fetching data or
+    replacing its geometry, selection, visibility or camera.
     Stable layer_id lets follow-ups reuse layers. title is a short Russian label.
     feature_indices optionally selects 0-based features in the chosen variant;
     for search_osm these have the same order as the returned features. If the
@@ -111,9 +199,7 @@ def update_map(
     if operation == 'upsert':
         if layer_id not in layers and len(layers) >= 20:
             raise ValueError('Map has 20 layers; remove unused layers first')
-        artifact = next((m.artifact for m in reversed(state['messages'])
-                         if isinstance(m, ToolMessage) and isinstance(m.artifact, dict)
-                         and m.artifact.get('data_ref') == data_ref), None)
+        artifact = find_geo_result(state, data_ref)
         if artifact is None or variant not in artifact['collections']:
             raise ValueError('Use a data_ref and variant from an earlier geographic tool result')
         data = artifact['collections'][variant]
@@ -135,7 +221,7 @@ def update_map(
                              'kind': kind, 'color': color, 'visible': True, 'data': data,
                              'radius_m': radius_m, 'height_m': height_m,
                              'illustrative': kind == 'cones', 'data_ref': data_ref, 'variant': variant,
-                             'feature_indices': feature_indices}
+                             'feature_indices': feature_indices, 'show_labels': show_labels}
     elif operation == 'clear':
         changes = {key: None for key in layers}
     else:
@@ -143,12 +229,16 @@ def update_map(
             raise ValueError('Unknown layer_id; use a layer from the current map state')
         if operation == 'remove':
             changes[layer_id] = None
+        elif operation == 'set_labels':
+            changes[layer_id] = {**layers[layer_id], 'show_labels': show_labels}
         elif operation in ('hide', 'show'):
             changes[layer_id] = {**layers[layer_id], 'visible': operation == 'show'}
     if operation in ('upsert', 'focus') and fit_bounds:
         camera = {'layer_id': layer_id, 'revision': str(uuid4()),
                   'pitch': 55 if changes.get(layer_id, layers.get(layer_id, {})).get('kind') == 'cones' else 0}
     result = {'operation': operation, 'layer_id': layer_id, 'status': 'ok'}
+    if operation in ('upsert', 'set_labels'):
+        result['show_labels'] = show_labels
     if operation == 'upsert':
         result['feature_count'] = len(data['features'])
         result['feature_names'] = [f['properties'].get('name') for f in data['features']]

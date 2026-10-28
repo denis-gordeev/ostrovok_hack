@@ -35,6 +35,11 @@ export function textContent(content) {
   return (content || []).filter(b => b.type === 'text').map(b => b.text).join('');
 }
 
+export function isVisibleModelStream(metadata = {}) {
+  if ((metadata.tags || []).includes('context_summary')) return false;
+  return !metadata.langgraph_node || metadata.langgraph_node === 'agent';
+}
+
 export function humanText(message) {
   return textContent(message.content).split('\n\nКонтекст карты (служебные координаты):')[0];
 }
@@ -57,8 +62,10 @@ export function technicalPreview(value) {
 
 export const toolLabels = {
   search_osm: 'Ищу места поблизости', overpass_query: 'Проверяю объекты на карте',
-  walking_route: 'Строю пеший маршрут', transit_route: 'Подбираю варианты проезда',
+  walking_route: 'Строю пеший маршрут', driving_route: 'Строю маршрут на автомобиле', transit_route: 'Подбираю варианты проезда',
+  wikipedia_search: 'Ищу сведения в энциклопедии', wikipedia_article: 'Читаю статью и ссылки на изображения',
   update_map: 'Обновляю карту',
+  read_geo_result: 'Восстанавливаю проверенные данные',
 };
 
 export function traceFromMessages(messages) {

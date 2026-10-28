@@ -5,12 +5,12 @@ services:
     ports:
       - "${API_BIND_ADDRESS:-0.0.0.0}:8081:80"
     volumes:
-      - ./data/overpass:/db
+      - ./data/overpass-agglomeration-v1:/db
       - ./data/extract:/data:ro
     environment:
       OVERPASS_MODE: init
       OVERPASS_META: "no"
-      OVERPASS_PLANET_URL: file:///data/kazan.osm.pbf
+      OVERPASS_PLANET_URL: file:///data/agglomeration-v1.osm.pbf
       OVERPASS_PLANET_PREPROCESS: >-
         mv /db/planet.osm.bz2 /db/planet.osm.pbf &&
         osmium cat /db/planet.osm.pbf -o /db/planet.osm.bz2 &&
