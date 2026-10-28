@@ -29,14 +29,16 @@ def parse_map_hotels(body: dict) -> tuple[list[MapHotel], int]:
     skipped = 0
     for item in body.get("map_hotels") or []:
         try:
-            hotels.append(MapHotel(
-                hotel_id=item["ota_hotel_id"],
-                master_id=int(item["master_id"]),
-                region_slug=item.get("region_catalog_slug") or "",
-                name=item.get("name") or "",
-                stars=_stars(item.get("stars")),
-                price=Decimal(str(item["price"])),
-            ))
+            hotels.append(
+                MapHotel(
+                    hotel_id=item["ota_hotel_id"],
+                    master_id=int(item["master_id"]),
+                    region_slug=item.get("region_catalog_slug") or "",
+                    name=item.get("name") or "",
+                    stars=_stars(item.get("stars")),
+                    price=Decimal(str(item["price"])),
+                )
+            )
         except _SKIP:
             skipped += 1
     return hotels, skipped

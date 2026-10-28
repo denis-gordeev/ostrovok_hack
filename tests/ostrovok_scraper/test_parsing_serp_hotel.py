@@ -23,13 +23,20 @@ def test_parse_map_hotels_handles_missing_list():
 def test_parse_session_region():
     region = parse_session_region(load_fixture("serp_map.json")["session_region"])
     assert (region.region_id, region.name, region.name_en, region.type, region.parent_id) == (
-        6288539, "Республика Татарстан", "Republic of Tatarstan", "Province (State)", None)
+        6288539,
+        "Республика Татарстан",
+        "Republic of Tatarstan",
+        "Province (State)",
+        None,
+    )
 
 
 def test_extract_next_data_keeps_only_needed_parts():
-    html = '<html><script id="__NEXT_DATA__" type="application/json">' \
-           '{"props": {"pageProps": {"hotel": {"id": "x"}, "hotelRegionData": {}, "reviews": {"total": 0}, "uid": "u"}}}' \
-           '</script></html>'
+    html = (
+        '<html><script id="__NEXT_DATA__" type="application/json">'
+        '{"props": {"pageProps": {"hotel": {"id": "x"}, "hotelRegionData": {}, "reviews": {"total": 0}, "uid": "u"}}}'
+        "</script></html>"
+    )
     assert extract_next_data(html) == {"hotel": {"id": "x"}, "hotelRegionData": {}, "reviews": {"total": 0}}
     with pytest.raises(ValueError, match="__NEXT_DATA__ not found"):
         extract_next_data("<html></html>")
@@ -37,7 +44,13 @@ def test_extract_next_data_keeps_only_needed_parts():
 
 def test_parse_hotel():
     row = parse_hotel(load_fixture("hotel_page.json"), stars=3)
-    assert (row.hotel_id, row.master_id, row.region_id, row.kind, row.stars) == ("don_kikhot_hotel_", 6479652, 1993, "hotel", 3)
+    assert (row.hotel_id, row.master_id, row.region_id, row.kind, row.stars) == (
+        "don_kikhot_hotel_",
+        6479652,
+        1993,
+        "hotel",
+        3,
+    )
     assert (row.check_in_from, row.check_out_until) == (time(14, 0), time(12, 0))
     assert (row.rating, row.rating_count, row.reviews_total) == (Decimal("8.9"), 336, 2)
     assert row.flags == ["has_internet", "has_parking", "has_pets"]
@@ -58,7 +71,12 @@ def test_parse_rooms_and_city_region():
     ]
     city = parse_city_region(load_fixture("hotel_page.json"), parent_id=6288539)
     assert (city.region_id, city.name, city.name_en, city.parent_id, city.catalog_slug) == (
-        1993, "Казань", "Kazan", 6288539, "russia/kazan")
+        1993,
+        "Казань",
+        "Kazan",
+        6288539,
+        "russia/kazan",
+    )
 
 
 def test_parse_hotel_degrades_small_defects():

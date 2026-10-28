@@ -18,17 +18,28 @@ def is_transient_error(exc: Exception) -> bool:
             return False
         cause = cause.__cause__
     if isinstance(exc, (requests.HTTPError, httpx.HTTPStatusError, openai.APIStatusError)):
-        response = getattr(exc, 'response', None)
-        status = getattr(response, 'status_code', None)
+        response = getattr(exc, "response", None)
+        status = getattr(response, "status_code", None)
         return status in (408, 429, 500, 502, 503, 504)
-    return isinstance(exc, (requests.ConnectionError, requests.Timeout,
-                            httpx.TimeoutException, httpx.NetworkError,
-                            openai.APIConnectionError))
+    return isinstance(
+        exc,
+        (
+            requests.ConnectionError,
+            requests.Timeout,
+            httpx.TimeoutException,
+            httpx.NetworkError,
+            openai.APIConnectionError,
+        ),
+    )
 
 
 REMOTE_RETRY_POLICY = RetryPolicy(
-    initial_interval=0, backoff_factor=1, max_interval=0,
-    max_attempts=3, jitter=False, retry_on=is_transient_error,
+    initial_interval=0,
+    backoff_factor=1,
+    max_interval=0,
+    max_attempts=3,
+    jitter=False,
+    retry_on=is_transient_error,
 )
 
 
@@ -39,18 +50,25 @@ def retry_remote_call(operation, *, max_attempts=None):
         if not 1 <= max_attempts <= 10:
             raise ValueError("max_attempts must be between 1 and 10")
         policy = policy._replace(max_attempts=max_attempts)
-    return RunnableLambda(lambda _: operation()).with_retry(
-        retry_if_exception_type=is_transient_error,
-        stop_after_attempt=policy.max_attempts,
-        exponential_jitter_params={
-            'initial': policy.initial_interval, 'max': policy.max_interval,
-            'exp_base': policy.backoff_factor, 'jitter': 1 if policy.jitter else 0,
-        },
-    ).invoke(None)
+    return (
+        RunnableLambda(lambda _: operation())
+        .with_retry(
+            retry_if_exception_type=is_transient_error,
+            stop_after_attempt=policy.max_attempts,
+            exponential_jitter_params={
+                "initial": policy.initial_interval,
+                "max": policy.max_interval,
+                "exp_base": policy.backoff_factor,
+                "jitter": 1 if policy.jitter else 0,
+            },
+        )
+        .invoke(None)
+    )
 
 
 def geo_post(*args, max_attempts=None, **kwargs):
     """Only read-only geographic POSTs belong here; never retry mutations."""
+
     def send():
         response = requests.post(*args, **kwargs)
         if response.status_code in (408, 429, 500, 502, 503, 504):

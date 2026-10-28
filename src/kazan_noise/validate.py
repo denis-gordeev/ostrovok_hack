@@ -201,9 +201,7 @@ def _courtyard_points(
     """Застроенные ячейки далеко от дорог tertiary+/трамвая/рельсов и рядом с высоким зданием."""
     feats = service.model.features
     busy = {*w.SANITY_BUSY_ROADS, *(f"{c}_link" for c in w.SANITY_BUSY_ROADS)}
-    roads = [
-        s.geom for s in feats.sources if s.kind in ("tram", "rail") or (s.kind == "road" and s.subtype in busy)
-    ]
+    roads = [s.geom for s in feats.sources if s.kind in ("tram", "rail") or (s.kind == "road" and s.subtype in busy)]
     obst = feats.obstacles
     tall = obst.geoms[obst.is_building & (obst.heights >= w.SANITY_COURTYARD_BUILDING_H_M)]
     idx = np.flatnonzero(grid.built_up)
@@ -240,15 +238,24 @@ def sanity_checks(service: NoiseService, grid: Grid, *, sample: int = 50, seed: 
     rng = np.random.default_rng(seed)
     return [
         _verdict(
-            "у магистрали", _road_points(service, rng, sample), service,
-            f"медиана ≥ {w.SANITY_ROAD_MIN_SCORE}", lambda m: m >= w.SANITY_ROAD_MIN_SCORE,
+            "у магистрали",
+            _road_points(service, rng, sample),
+            service,
+            f"медиана ≥ {w.SANITY_ROAD_MIN_SCORE}",
+            lambda m: m >= w.SANITY_ROAD_MIN_SCORE,
         ),
         _verdict(
-            "двор", _courtyard_points(service, grid, rng, sample), service,
-            f"медиана ≤ {w.SANITY_COURTYARD_MAX_SCORE}", lambda m: m <= w.SANITY_COURTYARD_MAX_SCORE,
+            "двор",
+            _courtyard_points(service, grid, rng, sample),
+            service,
+            f"медиана ≤ {w.SANITY_COURTYARD_MAX_SCORE}",
+            lambda m: m <= w.SANITY_COURTYARD_MAX_SCORE,
         ),
         _verdict(
-            "лес", _forest_points(service, rng, sample), service,
-            f"медиана ≤ {w.SANITY_FOREST_MAX_SCORE}", lambda m: m <= w.SANITY_FOREST_MAX_SCORE,
+            "лес",
+            _forest_points(service, rng, sample),
+            service,
+            f"медиана ≤ {w.SANITY_FOREST_MAX_SCORE}",
+            lambda m: m <= w.SANITY_FOREST_MAX_SCORE,
         ),
     ]

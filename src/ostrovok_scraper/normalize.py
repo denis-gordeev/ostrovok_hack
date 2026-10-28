@@ -53,8 +53,7 @@ def _insert(conn: psycopg.Connection, table: str, rows: list[Any]) -> None:
     names = [f.name for f in fields(rows[0])]
     jsonb_idx = {i for i, name in enumerate(names) if name in _JSONB.get(table, ())}
     values = [
-        tuple(Jsonb(v) if i in jsonb_idx and v is not None else v for i, v in enumerate(astuple(row)))
-        for row in rows
+        tuple(Jsonb(v) if i in jsonb_idx and v is not None else v for i, v in enumerate(astuple(row))) for row in rows
     ]
     placeholders = ", ".join(["%s"] * len(names))
     with conn.cursor() as cur:

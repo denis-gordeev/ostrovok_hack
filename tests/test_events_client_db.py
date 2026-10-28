@@ -22,11 +22,24 @@ def at(month: int, day: int, hour: int = 19) -> datetime:
 
 def row(event_id: int, *sessions: Session, **fields) -> EventRow:
     base = {
-        "event_id": event_id, "title": f"Событие {event_id}", "slug": None,
-        "site_url": f"https://kzn.kudago.com/event/e{event_id}/", "description": None, "body_text": None,
-        "categories": ["concert"], "tags": [], "age_restriction": None, "price": None, "is_free": None,
-        "favorites_count": 0, "place_title": None, "place_address": None, "place_lat": None, "place_lon": None,
-        "place_url": None, "raw": {"id": event_id},
+        "event_id": event_id,
+        "title": f"Событие {event_id}",
+        "slug": None,
+        "site_url": f"https://kzn.kudago.com/event/e{event_id}/",
+        "description": None,
+        "body_text": None,
+        "categories": ["concert"],
+        "tags": [],
+        "age_restriction": None,
+        "price": None,
+        "is_free": None,
+        "favorites_count": 0,
+        "place_title": None,
+        "place_address": None,
+        "place_lat": None,
+        "place_lon": None,
+        "place_url": None,
+        "raw": {"id": event_id},
     }
     return EventRow(**{**base, **fields}, sessions=list(sessions))
 
@@ -35,12 +48,25 @@ CONCERT = row(
     1,
     Session(at(11, 20), at(11, 20, 21)),
     Session(at(12, 5), at(12, 5, 21)),
-    title="Концерт «Пикник»", favorites_count=10, categories=["concert"], age_restriction="16+",
-    price="от 2500 рублей", is_free=False, description="Коротко.", body_text="Полное описание концерта.",
-    place_title="Татнефть Арена", place_address="ул. Чистопольская, 42", place_lat=55.82, place_lon=49.13,
+    title="Концерт «Пикник»",
+    favorites_count=10,
+    categories=["concert"],
+    age_restriction="16+",
+    price="от 2500 рублей",
+    is_free=False,
+    description="Коротко.",
+    body_text="Полное описание концерта.",
+    place_title="Татнефть Арена",
+    place_address="ул. Чистопольская, 42",
+    place_lat=55.82,
+    place_lon=49.13,
 )
 EXHIBITION = row(
-    2, Session(at(6, 3, 0), at(12, 31, 0)), title="Выставка «Луна»", categories=["exhibition"], favorites_count=5,
+    2,
+    Session(at(6, 3, 0), at(12, 31, 0)),
+    title="Выставка «Луна»",
+    categories=["exhibition"],
+    favorites_count=5,
     place_title="Галерея современного искусства",
 )
 DAILY_TOUR = row(3, *[Session(at(11, d, 11), at(11, d, 13)) for d in range(10, 22)], categories=["tour"])
@@ -77,7 +103,11 @@ async def test_events_for_stay_picks_one_off_events_and_exhibitions(dsn):
     assert (concert.place, concert.price, concert.age) == ("Татнефть Арена", "от 2500 рублей", "16+")
     assert concert.url == "https://kzn.kudago.com/event/e1/"
     [exhibition] = result.exhibitions
-    assert (exhibition.id, exhibition.until, exhibition.place) == (2, date(2026, 12, 31), "Галерея современного искусства")
+    assert (exhibition.id, exhibition.until, exhibition.place) == (
+        2,
+        date(2026, 12, 31),
+        "Галерея современного искусства",
+    )
     assert result.note is None
     assert "2026-10-28" in result.data and "url" in result.data
 
@@ -113,7 +143,11 @@ async def test_event_details_for_visit(dsn):
     assert details.description == "Полное описание концерта."
     assert details.sessions == ["2026-11-20 19:00"]
     assert details.until is None
-    assert (details.place.title, details.place.address, details.place.lat) == ("Татнефть Арена", "ул. Чистопольская, 42", 55.82)
+    assert (details.place.title, details.place.address, details.place.lat) == (
+        "Татнефть Арена",
+        "ул. Чистопольская, 42",
+        55.82,
+    )
     assert (details.price, details.is_free, details.age) == ("от 2500 рублей", False, "16+")
     assert details.url == "https://kzn.kudago.com/event/e1/"
 

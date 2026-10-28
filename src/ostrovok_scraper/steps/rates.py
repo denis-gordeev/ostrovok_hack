@@ -5,7 +5,11 @@ from ostrovok_scraper.config import OTHER_GUESTS, ScraperConfig
 from ostrovok_scraper.domain import child_age_key, paxes_for_guests, pick_reference_night, rates_key
 from ostrovok_scraper.steps import Item, StepReport, run_items
 from ostrovok_scraper.steps.inputs import (
-    available_nights, guests_hotels, page_facts, selected_hotels, serp_hotels,
+    available_nights,
+    guests_hotels,
+    page_facts,
+    selected_hotels,
+    serp_hotels,
 )
 from ostrovok_scraper.store import RawStore
 
@@ -53,19 +57,14 @@ def child_age_items(
     for hotel_id in hotel_ids:
         night = child_age_night(available.get(hotel_id, set()), cfg)
         if night is not None:
-            items.append(_rates_item(
-                api, child_age_key(hotel_id, night), hotel_id, regions[hotel_id], night, CHILD_PROBE_PAXES
-            ))
+            items.append(
+                _rates_item(api, child_age_key(hotel_id, night), hotel_id, regions[hotel_id], night, CHILD_PROBE_PAXES)
+            )
     return items
 
 
-def rates_items(
-    api: OstrovokApi, plan: list[tuple[str, date, int]], regions: dict[str, int]
-) -> list[Item]:
-    return [
-        _rates_item(api, rates_key(h, night, k), h, regions[h], night, paxes_for_guests(k))
-        for h, night, k in plan
-    ]
+def rates_items(api: OstrovokApi, plan: list[tuple[str, date, int]], regions: dict[str, int]) -> list[Item]:
+    return [_rates_item(api, rates_key(h, night, k), h, regions[h], night, paxes_for_guests(k)) for h, night, k in plan]
 
 
 def _with_pages(store: RawStore, limit_hotels: int | None) -> tuple[list[str], dict[str, int]]:
@@ -79,8 +78,12 @@ def _with_pages(store: RawStore, limit_hotels: int | None) -> tuple[list[str], d
 
 
 def run_child_age(
-    api: OstrovokApi, store: RawStore, cfg: ScraperConfig, *,
-    limit_hotels: int | None = None, retry_failed: bool = False,
+    api: OstrovokApi,
+    store: RawStore,
+    cfg: ScraperConfig,
+    *,
+    limit_hotels: int | None = None,
+    retry_failed: bool = False,
 ) -> StepReport:
     ids, regions = _with_pages(store, limit_hotels)
     items = child_age_items(api, ids, regions, available_nights(store), cfg)
@@ -88,8 +91,12 @@ def run_child_age(
 
 
 def run_rates(
-    api: OstrovokApi, store: RawStore, cfg: ScraperConfig, *,
-    limit_hotels: int | None = None, retry_failed: bool = False,
+    api: OstrovokApi,
+    store: RawStore,
+    cfg: ScraperConfig,
+    *,
+    limit_hotels: int | None = None,
+    retry_failed: bool = False,
 ) -> StepReport:
     ids, regions = _with_pages(store, limit_hotels)
     plan = plan_rate_requests(ids, available_nights(store), guests_hotels(store), cfg)

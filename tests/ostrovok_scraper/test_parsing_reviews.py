@@ -10,7 +10,9 @@ AUTHOR_FIELDS = {"author_name", "author_residency", "authorName", "authorResiden
 
 
 def test_parse_review_date_short_offset():
-    assert parse_review_date("2021-05-12 06:42:23.080211+00") == datetime(2021, 5, 12, 6, 42, 23, 80211, tzinfo=timezone.utc)
+    assert parse_review_date("2021-05-12 06:42:23.080211+00") == datetime(
+        2021, 5, 12, 6, 42, 23, 80211, tzinfo=timezone.utc
+    )
 
 
 def test_parse_api_reviews():
@@ -32,21 +34,34 @@ def test_parse_page_reviews():
     rows, skipped = parse_page_reviews(page["reviews"], hotel_id="don_kikhot_hotel_")
     assert skipped == 0
     assert [(r.review_id, r.traveller_type, r.trip_type, r.hotel_reply) for r in rows] == [
-        (1952999, "couple", "leisure", None), (1315975, "family", "leisure", "Спасибо!")]
+        (1952999, "couple", "leisure", None),
+        (1315975, "family", "leisure", "Спасибо!"),
+    ]
     assert rows[1].images == ["https://cdn.ostrovok.ru/t/{size}/rv1.JPEG"]
     assert all("Автор" not in repr(r) for r in rows)
 
 
 def test_malformed_items_are_skipped():
-    body = {"reviews": [{"id": 1, "review_date": "2021-01-01 00:00:00+00", "reply": "oops"},
-                        {"id": 2, "review_date": "2021-01-01 00:00:00+00", "order_context": []}]}
+    body = {
+        "reviews": [
+            {"id": 1, "review_date": "2021-01-01 00:00:00+00", "reply": "oops"},
+            {"id": 2, "review_date": "2021-01-01 00:00:00+00", "order_context": []},
+        ]
+    }
     rows, skipped = parse_api_reviews(body, hotel_id="h")
     assert rows == [] and skipped == 2
 
 
 def test_unparsable_stay_date_degrades_to_none():
-    body = {"reviews": [{"id": 1, "review_date": "2021-01-01 00:00:00+00",
-                         "order_context": {"check_in": "not-a-date", "check_out": "2021-01-03"}}]}
+    body = {
+        "reviews": [
+            {
+                "id": 1,
+                "review_date": "2021-01-01 00:00:00+00",
+                "order_context": {"check_in": "not-a-date", "check_out": "2021-01-03"},
+            }
+        ]
+    }
     rows, skipped = parse_api_reviews(body, hotel_id="h")
     assert skipped == 0 and len(rows) == 1
     assert (rows[0].stay_check_in, rows[0].stay_check_out) == (None, date(2021, 1, 3))

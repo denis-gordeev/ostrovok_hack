@@ -21,17 +21,23 @@ def reviews_items(api: OstrovokApi, totals: dict[str, int]) -> list[Item]:
     items = []
     for hotel_id, total in totals.items():
         for page in range(1, review_pages(total) + 1):
-            items.append(Item(
-                reviews_key(hotel_id, page),
-                {"hotel": hotel_id, "page": page, "page_size": PAGE_SIZE},
-                lambda h=hotel_id, p=page: api.reviews(h, p, PAGE_SIZE),
-            ))
+            items.append(
+                Item(
+                    reviews_key(hotel_id, page),
+                    {"hotel": hotel_id, "page": page, "page_size": PAGE_SIZE},
+                    lambda h=hotel_id, p=page: api.reviews(h, p, PAGE_SIZE),
+                )
+            )
     return items
 
 
 def run_reviews(
-    api: OstrovokApi, store: RawStore, cfg: ScraperConfig, *,
-    limit_hotels: int | None = None, retry_failed: bool = False,
+    api: OstrovokApi,
+    store: RawStore,
+    cfg: ScraperConfig,
+    *,
+    limit_hotels: int | None = None,
+    retry_failed: bool = False,
 ) -> StepReport:
     facts = page_facts(store)
     ids = selected_hotels(serp_hotels(store), limit_hotels)

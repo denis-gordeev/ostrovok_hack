@@ -55,7 +55,11 @@ class FakeOverpass:
 
 def test_retries_capacity_html_then_returns_json():
     client, seen, t = make_client(
-        [httpx.Response(502), httpx.Response(200, text="<html>at capacity</html>"), httpx.Response(200, json={"elements": []})]
+        [
+            httpx.Response(502),
+            httpx.Response(200, text="<html>at capacity</html>"),
+            httpx.Response(200, json={"elements": []}),
+        ]
     )
     assert client.query("[out:json];") == {"elements": []}
     assert t.sleeps == [15.0, 30.0]

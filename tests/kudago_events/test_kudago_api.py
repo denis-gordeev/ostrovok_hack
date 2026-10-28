@@ -63,9 +63,7 @@ def test_waits_min_interval_between_requests():
 
 
 def test_retries_5xx_429_and_timeouts_then_succeeds():
-    api, seen, t = make_api(
-        [httpx.Response(502), httpx.ReadTimeout("slow"), httpx.Response(429), page(api_event(1))]
-    )
+    api, seen, t = make_api([httpx.Response(502), httpx.ReadTimeout("slow"), httpx.Response(429), page(api_event(1))])
     assert [e["id"] for e in fetch(api)] == [1]
     assert len(seen) == 4
     assert t.sleeps == [2.0, 5.0, 15.0]

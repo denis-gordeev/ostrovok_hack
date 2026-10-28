@@ -125,13 +125,27 @@ def _read_features(path: Path) -> Features:
         if str(z["weights_hash"]) != weights_hash():
             raise _stale(path, "построен при других весах модели")
         sources = [
-            Source(kind=str(kind), osm_id=str(osm_id), name=str(name) or None, subtype=str(subtype),
-                   geom=geom, height=float(height), w_day=float(w_day), w_night=float(w_night),
-                   radius=float(radius))
+            Source(
+                kind=str(kind),
+                osm_id=str(osm_id),
+                name=str(name) or None,
+                subtype=str(subtype),
+                geom=geom,
+                height=float(height),
+                w_day=float(w_day),
+                w_night=float(w_night),
+                radius=float(radius),
+            )
             for kind, osm_id, name, subtype, geom, height, w_day, w_night, radius in zip(
-                z["src_kind"], z["src_osm_id"], z["src_name"], z["src_subtype"],
+                z["src_kind"],
+                z["src_osm_id"],
+                z["src_name"],
+                z["src_subtype"],
                 unpack_geoms(z["src_wkb"], z["src_off"]),
-                z["src_height"], z["src_w_day"], z["src_w_night"], z["src_radius"],
+                z["src_height"],
+                z["src_w_day"],
+                z["src_w_night"],
+                z["src_radius"],
                 strict=True,
             )
         ]

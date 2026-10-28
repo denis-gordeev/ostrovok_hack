@@ -17,7 +17,10 @@ def test_parses_event_fields_and_place():
     assert row.site_url == "https://kzn.kudago.com/event/event-7/"
     assert (row.categories, row.tags) == (["concert"], ["рок"])
     assert (row.age_restriction, row.price, row.is_free, row.favorites_count) == (
-        "16+", "от 2500 до 9000 рублей", False, 42,
+        "16+",
+        "от 2500 до 9000 рублей",
+        False,
+        42,
     )
     assert (row.description, row.body_text) == ("Легендарная рок-группа.", "Полное описание концерта.")
     assert (row.place_title, row.place_address) == ("Татнефть Арена", "ул. Чистопольская, 42")
@@ -51,11 +54,11 @@ def test_end_before_start_is_clamped_to_start():
 def test_keeps_only_sessions_touching_the_window():
     raw = api_event(
         dates=[
-            api_date(msk(2026, 6, 1, 19), msk(2026, 6, 1, 21)),      # прошло
-            api_date(msk(2026, 6, 3), msk(2026, 12, 31)),            # идёт с июня — пересекает окно
-            api_date(msk(2026, 11, 2, 12), msk(2026, 11, 2, 12)),   # точка внутри окна
-            api_date(msk(2026, 12, 28), msk(2026, 12, 28, 2)),       # начинается ровно в конце окна
-            api_date(msk(2027, 1, 15, 19), msk(2027, 1, 15, 21)),   # после окна
+            api_date(msk(2026, 6, 1, 19), msk(2026, 6, 1, 21)),  # прошло
+            api_date(msk(2026, 6, 3), msk(2026, 12, 31)),  # идёт с июня — пересекает окно
+            api_date(msk(2026, 11, 2, 12), msk(2026, 11, 2, 12)),  # точка внутри окна
+            api_date(msk(2026, 12, 28), msk(2026, 12, 28, 2)),  # начинается ровно в конце окна
+            api_date(msk(2027, 1, 15, 19), msk(2027, 1, 15, 21)),  # после окна
         ]
     )
     starts = [s.start_at for s in parse(raw).sessions]

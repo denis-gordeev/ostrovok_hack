@@ -19,7 +19,9 @@ def make_http(responses):
         return item
 
     t = FakeTime()
-    http = OstrovokHttp(ScraperConfig(_env_file=None), transport=httpx.MockTransport(handler), sleep=t.sleep, clock=t.clock)
+    http = OstrovokHttp(
+        ScraperConfig(_env_file=None), transport=httpx.MockTransport(handler), sleep=t.sleep, clock=t.clock
+    )
     return http, seen, t
 
 
@@ -82,10 +84,12 @@ def test_success_resets_block_counter():
 
 
 def test_follows_redirects_and_sends_browser_user_agent():
-    http, seen, _ = make_http([
-        httpx.Response(301, headers={"Location": "https://ostrovok.ru/hotel/russia/naberezhnye_chelny/mid1/x/"}),
-        httpx.Response(200, text="<html></html>"),
-    ])
+    http, seen, _ = make_http(
+        [
+            httpx.Response(301, headers={"Location": "https://ostrovok.ru/hotel/russia/naberezhnye_chelny/mid1/x/"}),
+            httpx.Response(200, text="<html></html>"),
+        ]
+    )
     assert http.request("GET", "/hotel/russia/kazan/mid1/x/").status_code == 200
     assert seen[1].url.path == "/hotel/russia/naberezhnye_chelny/mid1/x/"
     assert seen[0].headers["User-Agent"].startswith("Mozilla/5.0")

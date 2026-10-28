@@ -12,17 +12,23 @@ def hotel_items(api: OstrovokApi, hotels: dict[str, MapHotel], hotel_ids: list[s
     items = []
     for hotel_id in hotel_ids:
         h = hotels[hotel_id]
-        items.append(Item(
-            hotel_key(hotel_id),
-            {"region_slug": h.region_slug, "master_id": h.master_id},
-            lambda h=h: api.hotel_page(h.region_slug, h.master_id, h.hotel_id),
-        ))
+        items.append(
+            Item(
+                hotel_key(hotel_id),
+                {"region_slug": h.region_slug, "master_id": h.master_id},
+                lambda h=h: api.hotel_page(h.region_slug, h.master_id, h.hotel_id),
+            )
+        )
     return items
 
 
 def run_hotels(
-    api: OstrovokApi, store: RawStore, cfg: ScraperConfig, *,
-    limit_hotels: int | None = None, retry_failed: bool = False,
+    api: OstrovokApi,
+    store: RawStore,
+    cfg: ScraperConfig,
+    *,
+    limit_hotels: int | None = None,
+    retry_failed: bool = False,
 ) -> StepReport:
     hotels = serp_hotels(store)
     ids = selected_hotels(hotels, limit_hotels)

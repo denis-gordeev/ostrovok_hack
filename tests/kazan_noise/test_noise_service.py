@@ -41,7 +41,6 @@ def test_swapped_lat_lon_hint(service):
         service.noise_at(KAZAN_LON, KAZAN_LAT)
 
 
-
 def test_noise_many_matches_noise_at_and_marks_points_outside(service):
     swapped = (KAZAN_LON, KAZAN_LAT)
     near, outside, on_building, swapped_error = service.noise_many([NEAR_ROAD, (55.0, 49.0), ON_BUILDING, swapped])
@@ -49,6 +48,7 @@ def test_noise_many_matches_noise_at_and_marks_points_outside(service):
     assert isinstance(outside, OutsideKazanError) and "вне городского округа" in str(outside)
     assert isinstance(swapped_error, OutsideKazanError) and "перепутаны lat и lon" in str(swapped_error)
     assert service.noise_many([]) == []
+
 
 def test_point_on_building_has_quiet_side(service):
     r = service.noise_at(*ON_BUILDING)

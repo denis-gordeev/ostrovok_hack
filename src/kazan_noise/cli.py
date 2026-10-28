@@ -91,9 +91,7 @@ def _format_report(r: NoiseReport) -> str:
     ]
     if r.quiet_side:
         q = r.quiet_side
-        lines.append(
-            f"Тихая сторона: день {q.day.score} ({q.day.label}), ночь {q.night.score} ({q.night.label})"
-        )
+        lines.append(f"Тихая сторона: день {q.day.score} ({q.day.label}), ночь {q.night.score} ({q.night.label})")
     if r.main_sources:
         lines.append("Основные источники:")
     for s in r.main_sources:

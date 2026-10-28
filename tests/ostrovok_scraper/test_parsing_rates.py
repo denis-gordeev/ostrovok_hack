@@ -7,8 +7,9 @@ from ostrovok_scraper.parsing.rates import free_child_age, parse_rates
 
 
 def rates_by_hash():
-    rows, skipped = parse_rates(load_fixture("rates_2.json"), hotel_id="don_kikhot_hotel_",
-                                night=date(2026, 11, 17), requested_guests=2)
+    rows, skipped = parse_rates(
+        load_fixture("rates_2.json"), hotel_id="don_kikhot_hotel_", night=date(2026, 11, 17), requested_guests=2
+    )
     return {r.source_rate_hash: r for r in rows}, skipped
 
 
@@ -20,7 +21,13 @@ def test_parse_rates_dedupes_and_skips_broken():
 
 def test_parse_rates_refundable_rate():
     r = rates_by_hash()[0]["sr-a"]
-    assert (r.rg_hash, r.meal, r.has_breakfast, r.payment_type, r.price) == ("3202302", "nomeal", False, "now", Decimal("5609.00"))
+    assert (r.rg_hash, r.meal, r.has_breakfast, r.payment_type, r.price) == (
+        "3202302",
+        "nomeal",
+        False,
+        "now",
+        Decimal("5609.00"),
+    )
     assert (r.night_type, r.requested_guests, r.occupancy, r.allotment) == ("weekday", 2, 2, 12)
     assert r.free_cancellation_before == datetime(2026, 11, 15, 11, 0, tzinfo=timezone.utc)
     assert r.free_cancellation_hours == Decimal("34.0")  # 00:00 МСК 17.11 = 16.11 21:00 UTC
@@ -56,8 +63,9 @@ def _rate(**changes):
 def test_parse_rates_skips_non_dict_meal_data_and_nan_price():
     bad_meals = _rate(meal_data={"meals": ["x"]})
     nan = _rate(payment_options={"payment_types": [{"type": "now", "amount": "NaN"}]})
-    rows, skipped = parse_rates({"rates": [bad_meals, nan, _rate()]}, hotel_id="x",
-                                night=date(2026, 11, 17), requested_guests=2)
+    rows, skipped = parse_rates(
+        {"rates": [bad_meals, nan, _rate()]}, hotel_id="x", night=date(2026, 11, 17), requested_guests=2
+    )
     assert len(rows) == 1 and skipped == 2
 
 

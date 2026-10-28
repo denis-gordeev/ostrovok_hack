@@ -27,8 +27,13 @@ def serp_guests_items(api: OstrovokApi, cfg: ScraperConfig) -> list[Item]:
 
 
 def run_serp(
-    api: OstrovokApi, store: RawStore, cfg: ScraperConfig, *,
-    today: date, nights: int | None = None, retry_failed: bool = False,
+    api: OstrovokApi,
+    store: RawStore,
+    cfg: ScraperConfig,
+    *,
+    today: date,
+    nights: int | None = None,
+    retry_failed: bool = False,
 ) -> StepReport:
     return run_items(store, "serp", serp_items(api, cfg, today=today, nights=nights), retry_failed=retry_failed)
 

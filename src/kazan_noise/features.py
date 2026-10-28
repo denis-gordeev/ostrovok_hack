@@ -191,11 +191,7 @@ def rail_source(tags: dict, geom: BaseGeometry, osm_id: str) -> Source | None:
     q_day, q_night, default_speed = w.RAILS[railway]
     speed = max(parse_maxspeed(tags.get("maxspeed")) or default_speed, w.MIN_SPEED)
     minor = tags.get("service") in _MINOR_SERVICES or tags.get("usage") == "industrial"
-    const = (
-        20 * math.log10(speed)
-        + (w.C_RAIL if railway == "rail" else w.C_TRAM)
-        + (w.RAIL_MINOR_DB if minor else 0.0)
-    )
+    const = 20 * math.log10(speed) + (w.C_RAIL if railway == "rail" else w.C_TRAM) + (w.RAIL_MINOR_DB if minor else 0.0)
     return Source(
         kind="rail" if railway == "rail" else "tram",
         osm_id=osm_id,

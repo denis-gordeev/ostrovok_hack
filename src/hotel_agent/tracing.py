@@ -83,9 +83,9 @@ class AgentTracer(BaseCallbackHandler):
         input_tokens, output_tokens = usage.get("input_tokens"), usage.get("output_tokens")
         reasoning = usage.get("output_token_details", {}).get("reasoning")
         tool_calls = [call["name"] for call in getattr(message, "tool_calls", [])]
-        model = (getattr(message, "response_metadata", {}) or {}).get("model_name") or (
-            response.llm_output or {}
-        ).get("model_name")
+        model = (getattr(message, "response_metadata", {}) or {}).get("model_name") or (response.llm_output or {}).get(
+            "model_name"
+        )
 
         self._input_tokens += input_tokens or 0
         self._output_tokens += output_tokens or 0
@@ -120,7 +120,10 @@ class AgentTracer(BaseCallbackHandler):
     def on_tool_start(self, serialized, input_str: str, *, run_id: UUID, inputs: dict | None = None, **kwargs) -> None:
         self._started[run_id] = time.monotonic()
         # inputs — аргументы от LLM без внедрённых зависимостей (runtime); у строкового tool их нет.
-        self._tools[run_id] = (serialized.get("name") or kwargs.get("name", "?"), input_str if inputs is None else inputs)
+        self._tools[run_id] = (
+            serialized.get("name") or kwargs.get("name", "?"),
+            input_str if inputs is None else inputs,
+        )
 
     def on_tool_end(self, output: Any, *, run_id: UUID, **kwargs) -> None:
         name, args = self._tools.pop(run_id, ("?", None))

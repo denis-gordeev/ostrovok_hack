@@ -67,10 +67,8 @@ def parse_hotel(page: dict, *, stars: int | None) -> HotelRow:
         flags=[f.lower() for f in hotel.get("serpFilters") or []],
         payment_methods=list(hotel.get("paymentMethods") or []),
         policies={
-                name: p.get("value")
-                for name, p in policies.items()
-                if name != "checkInCheckOut" and isinstance(p, dict)
-            },
+            name: p.get("value") for name, p in policies.items() if name != "checkInCheckOut" and isinstance(p, dict)
+        },
         metro=[
             {"name": s["name"], "distance_m": s["distance"]}
             for s in location.get("nearestSubways") or []
@@ -93,17 +91,19 @@ def parse_rooms(page: dict) -> list[RoomRow]:
         seen.add(rg_hash)
         name = group.get("nameStruct") or {}
         parent = group.get("parentRgHash")
-        rooms.append(RoomRow(
-            hotel_id=hotel["id"],
-            rg_hash=rg_hash,
-            parent_rg_hash=None if parent is None else str(parent),
-            name=name.get("mainName") or "",
-            bedding_type=name.get("beddingType") or None,
-            bathroom=name.get("bathroom") or None,
-            size_m2=_decimal(group.get("size")),
-            amenities=list(group.get("roomAmenityData") or []),
-            images=_images(group.get("images"), _ROOM_IMAGES),
-        ))
+        rooms.append(
+            RoomRow(
+                hotel_id=hotel["id"],
+                rg_hash=rg_hash,
+                parent_rg_hash=None if parent is None else str(parent),
+                name=name.get("mainName") or "",
+                bedding_type=name.get("beddingType") or None,
+                bathroom=name.get("bathroom") or None,
+                size_m2=_decimal(group.get("size")),
+                amenities=list(group.get("roomAmenityData") or []),
+                images=_images(group.get("images"), _ROOM_IMAGES),
+            )
+        )
     return rooms
 
 

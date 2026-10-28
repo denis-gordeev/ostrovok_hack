@@ -24,8 +24,12 @@ STAY = StayEvents(
     data="KudaGo, загружено 2026-10-28. У каждого упомянутого события указывай ссылку url.",
 )
 DETAILS = EventDetails(
-    id=1, title="Концерт «Пикник»", categories=["concert"], sessions=["2026-11-20 19:00"],
-    url="https://kzn.kudago.com/event/e1/", data="KudaGo, загружено 2026-10-28.",
+    id=1,
+    title="Концерт «Пикник»",
+    categories=["concert"],
+    sessions=["2026-11-20 19:00"],
+    url="https://kzn.kudago.com/event/e1/",
+    data="KudaGo, загружено 2026-10-28.",
 )
 
 

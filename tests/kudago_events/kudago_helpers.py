@@ -21,6 +21,7 @@ def ts(moment: datetime) -> int:
 
 def api_date(start: datetime | int | None, end: datetime | int | None, **flags) -> dict:
     """Элемент dates[] ответа API с expand=dates; datetime → unix-время."""
+
     def unix(v):
         return ts(v) if isinstance(v, datetime) else v
 
@@ -66,7 +67,6 @@ def api_event(event_id: int = 1, **overrides) -> dict:
     }
     event.update(overrides)
     return event
-
 
 
 class FakeTime:

@@ -352,7 +352,16 @@ def _normalize(text: str) -> str:
 _TRANSLIT = str.maketrans(
     {
         **dict(zip("абвгдезийклмнопрстуфыэ", "abvgdeziiklmnoprstufye", strict=True)),
-        "ж": "zh", "х": "kh", "ц": "ts", "ч": "ch", "ш": "sh", "щ": "shch", "ю": "yu", "я": "ya", "ъ": "", "ь": "",
+        "ж": "zh",
+        "х": "kh",
+        "ц": "ts",
+        "ч": "ch",
+        "ш": "sh",
+        "щ": "shch",
+        "ю": "yu",
+        "я": "ya",
+        "ъ": "",
+        "ь": "",
     }
 )
 

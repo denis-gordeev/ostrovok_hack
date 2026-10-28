@@ -49,7 +49,9 @@ def load_events(conn: psycopg.Connection, api: EventsSource, cfg: KudagoConfig, 
     return len(rows)
 
 
-def refresh_if_stale(cfg: KudagoConfig, *, now: datetime | None = None, api: EventsSource | None = None) -> RefreshResult:
+def refresh_if_stale(
+    cfg: KudagoConfig, *, now: datetime | None = None, api: EventsSource | None = None
+) -> RefreshResult:
     """Загружает события, если удачной загрузки не было max_age_hours. Не бросает исключений: ошибка — в результате."""
     now = now or datetime.now(UTC)
     try:

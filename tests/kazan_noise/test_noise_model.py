@@ -66,7 +66,6 @@ def test_loud_and_quiet_facades_are_chosen_per_mode():
     assert p.quiet_night.night_db == min(r.night_db for r in receivers)
 
 
-
 def test_at_many_matches_at_point_by_point_with_any_number_of_threads():
     scene = local_scene(sources=[PRIMARY, CLUB], buildings=[BLOCK])
     points = [(0, 40), (0, 150), (200, 10), (0, 40)]
@@ -75,6 +74,7 @@ def test_at_many_matches_at_point_by_point_with_any_number_of_threads():
     assert serial.at_many(points) == expected
     assert NoiseModel(scene, threads=4).at_many(points) == expected
     assert NoiseModel(scene, threads=4).at_many([]) == []
+
 
 def test_facade_points_are_capped_and_outside():
     m = NoiseModel(local_scene(buildings=[(box(0, 0, 400, 400), 20.0)]))
@@ -204,8 +204,17 @@ def test_pruning_quiet_far_subsources_keeps_levels():
     # Громкая дорога за домом, колокольня, громкая только днём, и много слабых дальних улиц.
     bells = Source("worship", "node/3", None, "place_of_worship", Point(100, 150), 20.0, 95.0, OFF, 300)
     weak = [
-        Source("road", f"way/{10 + i}", None, "service", LineString([(-900, 300 + 25 * i), (900, 300 + 25 * i)]),
-               0.5, 40.0, 30.0, 1000)
+        Source(
+            "road",
+            f"way/{10 + i}",
+            None,
+            "service",
+            LineString([(-900, 300 + 25 * i), (900, 300 + 25 * i)]),
+            0.5,
+            40.0,
+            30.0,
+            1000,
+        )
         for i in range(25)
     ]
     scene = local_scene(sources=[PRIMARY, bells, *weak], buildings=[(box(-1000, 20, 1000, 40), 15.0)])

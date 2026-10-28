@@ -117,11 +117,13 @@ class EventsClient:
             description=_shorten(event.body_text or event.description),
             sessions=[_format_any(s) for s in sessions[:MAX_DETAIL_SESSIONS]],
             until=until_date(event) if any(is_long(s) for s in event.sessions) else None,
-            place=PlaceInfo(
-                title=event.place_title, address=event.place_address, lat=event.place_lat, lon=event.place_lon
-            )
-            if has_place
-            else None,
+            place=(
+                PlaceInfo(
+                    title=event.place_title, address=event.place_address, lat=event.place_lat, lon=event.place_lon
+                )
+                if has_place
+                else None
+            ),
             price=event.price,
             is_free=event.is_free,
             age=event.age_restriction,

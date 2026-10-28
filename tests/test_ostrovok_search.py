@@ -289,10 +289,27 @@ def test_hotel_without_rates_for_the_request_is_only_counted(overrides):
 )
 def test_hotel_filters(overrides, expected):
     hotels = [
-        hotel("hostel", name="Хостел У Кремля", kind="hostel", stars=0, rating=Decimal(0), rating_count=0,
-              lat=55.7990, lon=49.1060, prices=(500, 500, 500)),
-        hotel("korston_royal_hotel", name="Отель Korston Royal", stars=5, rating=Decimal("9.1"), lat=55.78, lon=49.15,
-              flags=["has_pool", "has_ecar_charger "], metro=[{"name": "Козья слобода", "distance_m": 1800}]),
+        hotel(
+            "hostel",
+            name="Хостел У Кремля",
+            kind="hostel",
+            stars=0,
+            rating=Decimal(0),
+            rating_count=0,
+            lat=55.7990,
+            lon=49.1060,
+            prices=(500, 500, 500),
+        ),
+        hotel(
+            "korston_royal_hotel",
+            name="Отель Korston Royal",
+            stars=5,
+            rating=Decimal("9.1"),
+            lat=55.78,
+            lon=49.15,
+            flags=["has_pool", "has_ecar_charger "],
+            metro=[{"name": "Козья слобода", "distance_m": 1800}],
+        ),
     ]
     templates = [*both_types(hotel_id="hostel"), *both_types(hotel_id="korston_royal_hotel")]
 

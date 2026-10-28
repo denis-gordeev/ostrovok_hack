@@ -49,9 +49,7 @@ def select_events(events: list[StoredEvent], *, checkin: date, checkout: date) -
     for event in events:
         if EXCLUDED_CATEGORIES & set(event.categories):
             continue
-        in_visit = sorted(
-            (s for s in event.sessions if overlaps(s, start, end)), key=lambda s: s.start_at or start
-        )
+        in_visit = sorted((s for s in event.sessions if overlaps(s, start, end)), key=lambda s: s.start_at or start)
         if not in_visit:
             continue
         if any(is_long(s) for s in in_visit):

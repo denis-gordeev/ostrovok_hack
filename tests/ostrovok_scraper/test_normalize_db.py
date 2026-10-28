@@ -19,14 +19,25 @@ def seed(store: RawStore) -> None:
     store.save("serp", "night=2026-11-17;guests=2", request={}, status_code=200, body=load_fixture("serp_map.json"))
     store.save("hotels", "hotel=don_kikhot_hotel_", request={}, status_code=200, body=load_fixture("hotel_page.json"))
     store.save(
-        "hotels", "hotel=gostinitsa_amsterdam_na_tukaya_hotel", request={}, status_code=None, body=None, error="HTTP 500"
+        "hotels",
+        "hotel=gostinitsa_amsterdam_na_tukaya_hotel",
+        request={},
+        status_code=None,
+        body=None,
+        error="HTTP 500",
     )
     store.save(
-        "child_age", "hotel=don_kikhot_hotel_;night=2026-11-17", request={}, status_code=200,
+        "child_age",
+        "hotel=don_kikhot_hotel_;night=2026-11-17",
+        request={},
+        status_code=200,
         body={"rates": [{"occupancy": 3}]},
     )
     store.save(
-        "rates", "hotel=don_kikhot_hotel_;night=2026-11-17;guests=2", request={}, status_code=200,
+        "rates",
+        "hotel=don_kikhot_hotel_;night=2026-11-17;guests=2",
+        request={},
+        status_code=200,
         body=load_fixture("rates_2.json"),
     )
 
@@ -50,7 +61,8 @@ def test_normalize_builds_tables(db_conn):
     assert (hotel["stars"], hotel["free_child_age"], hotel["free_child_age_source"]) == (3, 3, "probe")
     assert "contacts" not in hotel
     assert {r["region_id"]: r["parent_id"] for r in fetch(db_conn, "SELECT * FROM ostrovok.regions")} == {
-        6288539: None, 1993: 6288539,
+        6288539: None,
+        1993: 6288539,
     }
 
     ratios = {r["source_rate_hash"]: r["price_ratio"] for r in fetch(db_conn, "SELECT * FROM ostrovok.rates")}
@@ -85,7 +97,10 @@ def test_broken_page_is_skipped(db_conn):
     store = RawStore(db_conn)
     seed(store)
     store.save(
-        "hotels", "hotel=gostinitsa_amsterdam_na_tukaya_hotel", request={}, status_code=200,
+        "hotels",
+        "hotel=gostinitsa_amsterdam_na_tukaya_hotel",
+        request={},
+        status_code=200,
         body={"hotel": {}, "hotelRegionData": {}, "reviews": {"total": 0, "list": []}},
     )
     report = normalize(db_conn, CFG)

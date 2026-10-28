@@ -37,27 +37,31 @@ class GeoState(MessagesState):
 
 
 def feature(geometry, **properties):
-    return {'type': 'Feature', 'geometry': geometry, 'properties': properties}
+    return {"type": "Feature", "geometry": geometry, "properties": properties}
 
 
 def collection(features):
-    return {'type': 'FeatureCollection', 'features': features}
+    return {"type": "FeatureCollection", "features": features}
 
 
 def map_result(content: dict, variants: dict):
     """Persist exact values and provenance independently of conversation summaries."""
     # A new source date must not silently overwrite an older verified result.
-    payload = {'result': content, 'collections': variants}
+    payload = {"result": content, "collections": variants}
     digest = hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()[:24]
-    ref = f'map-{digest}'
-    result = {**content, 'data_ref': ref, 'map_variants': list(variants),
-              'map_feature_count': {key:len(value['features']) for key,value in variants.items()}}
-    artifact = {'data_ref': ref, 'collections': variants, 'result': result}
-    folder = Path(os.getenv('CACHE_DIR', '.cache')) / 'verified-results'
+    ref = f"map-{digest}"
+    result = {
+        **content,
+        "data_ref": ref,
+        "map_variants": list(variants),
+        "map_feature_count": {key: len(value["features"]) for key, value in variants.items()},
+    }
+    artifact = {"data_ref": ref, "collections": variants, "result": result}
+    folder = Path(os.getenv("CACHE_DIR", ".cache")) / "verified-results"
     folder.mkdir(parents=True, exist_ok=True)
-    path = folder / f'{ref}.json'
+    path = folder / f"{ref}.json"
     if not path.exists():
-        with tempfile.NamedTemporaryFile(mode='w', dir=folder, delete=False) as handle:
+        with tempfile.NamedTemporaryFile(mode="w", dir=folder, delete=False) as handle:
             temporary = Path(handle.name)
             try:
                 json.dump(artifact, handle, ensure_ascii=False)
@@ -70,34 +74,40 @@ def map_result(content: dict, variants: dict):
 
 def collect_geo_results(state):
     """Checkpoint verified artifacts before any history compaction."""
-    known = state.get('geo_results', {})
+    known = state.get("geo_results", {})
     results = {}
-    for message in state.get('messages', []):
+    for message in state.get("messages", []):
         if not isinstance(message, ToolMessage) or not isinstance(message.artifact, dict):
             continue
         artifact = message.artifact
-        ref = artifact.get('data_ref')
-        if ref and ref not in known and 'collections' in artifact:
+        ref = artifact.get("data_ref")
+        if ref and ref not in known and "collections" in artifact:
             # Also migrate checkpoints made before result metadata lived in artifacts.
-            if 'result' not in artifact:
-                artifact = {**artifact, 'result': json.loads(message.content)}
+            if "result" not in artifact:
+                artifact = {**artifact, "result": json.loads(message.content)}
             results[ref] = artifact
-    return {'geo_results': results}
+    return {"geo_results": results}
 
 
 def find_geo_result(state, data_ref):
-    artifact = state.get('geo_results', {}).get(data_ref)
+    artifact = state.get("geo_results", {}).get(data_ref)
     if artifact is not None:
         return artifact
     # Backwards compatibility for old checkpoints and direct ToolNode clients.
-    return next((m.artifact for m in reversed(state.get('messages', []))
-                 if isinstance(m, ToolMessage) and isinstance(m.artifact, dict)
-                 and m.artifact.get('data_ref') == data_ref), None)
+    return next(
+        (
+            m.artifact
+            for m in reversed(state.get("messages", []))
+            if isinstance(m, ToolMessage) and isinstance(m.artifact, dict) and m.artifact.get("data_ref") == data_ref
+        ),
+        None,
+    )
 
 
 @tool
-def read_geo_result(data_ref: str, state: Annotated[dict, InjectedState],
-                    variant: str = 'default', feature_index: int | None = None) -> dict:
+def read_geo_result(
+    data_ref: str, state: Annotated[dict, InjectedState], variant: str = "default", feature_index: int | None = None
+) -> dict:
     """Read exact coordinates, dates and sources from a VERIFIED conversation result.
     Use after summarization instead of reconstructing facts from a summary.
     Optional feature_index (0-based) selects one object in a map variant.
@@ -106,27 +116,36 @@ def read_geo_result(data_ref: str, state: Annotated[dict, InjectedState],
     """
     artifact = find_geo_result(state, data_ref)
     if artifact is None:
-        raise ValueError('Unknown data_ref in this conversation')
-    data = artifact['collections'].get(variant)
+        raise ValueError("Unknown data_ref in this conversation")
+    data = artifact["collections"].get(variant)
     if data is None:
-        raise ValueError('Unknown map variant')
-    features = data['features']
+        raise ValueError("Unknown map variant")
+    features = data["features"]
     if feature_index is not None:
         if not 0 <= feature_index < len(features):
-            raise ValueError('feature_index is out of range')
+            raise ValueError("feature_index is out of range")
         indices = [feature_index]
     else:
         indices = range(len(features))
     locations = []
     for index in indices:
         item = features[index]
-        point = item['geometry']['type'] == 'Point'
-        coordinates = item['geometry']['coordinates'] if point else item['properties'].get('center')
+        point = item["geometry"]["type"] == "Point"
+        coordinates = item["geometry"]["coordinates"] if point else item["properties"].get("center")
         if coordinates is not None:
-            locations.append({'feature_index': index, **item['properties'], 'location': {
-                'lat': coordinates[1], 'lon': coordinates[0], 'crs': 'EPSG:4326',
-                'kind': item['properties'].get('location_kind', 'point' if point else 'representative_point')}})
-    return {'data_ref': data_ref, 'result': artifact.get('result', {}), 'locations': locations}
+            locations.append(
+                {
+                    "feature_index": index,
+                    **item["properties"],
+                    "location": {
+                        "lat": coordinates[1],
+                        "lon": coordinates[0],
+                        "crs": "EPSG:4326",
+                        "kind": item["properties"].get("location_kind", "point" if point else "representative_point"),
+                    },
+                }
+            )
+    return {"data_ref": data_ref, "result": artifact.get("result", {}), "locations": locations}
 
 
 def decode_polyline(encoded: str):
@@ -137,11 +156,11 @@ def decode_polyline(encoded: str):
             value = shift = 0
             while True:
                 if index >= len(encoded) or shift > 30:
-                    raise ValueError('Invalid route polyline')
+                    raise ValueError("Invalid route polyline")
                 byte = ord(encoded[index]) - 63
                 index += 1
                 if not 0 <= byte <= 63:
-                    raise ValueError('Invalid route polyline')
+                    raise ValueError("Invalid route polyline")
                 value |= (byte & 31) << shift
                 shift += 5
                 if byte < 32:
@@ -155,15 +174,15 @@ def decode_polyline(encoded: str):
 
 @tool
 def update_map(
-    operation: Literal['upsert', 'remove', 'clear', 'focus', 'hide', 'show', 'set_labels'],
+    operation: Literal["upsert", "remove", "clear", "focus", "hide", "show", "set_labels"],
     layer_id: str,
     state: Annotated[dict, InjectedState],
     tool_call_id: Annotated[str, InjectedToolCallId],
-    title: str = '',
+    title: str = "",
     data_ref: str | None = None,
-    variant: str = 'default',
-    kind: Literal['geojson', 'points', 'cones'] = 'geojson',
-    color: str = '#2563eb',
+    variant: str = "default",
+    kind: Literal["geojson", "points", "cones"] = "geojson",
+    color: str = "#2563eb",
     fit_bounds: bool = True,
     radius_m: Annotated[float, Field(ge=1, le=5000)] = 150,
     height_m: Annotated[float, Field(ge=1, le=3000)] = 100,
@@ -189,69 +208,95 @@ def update_map(
     Reuse an existing layer's feature_indices when visualizing its same objects.
     Map state persists with the conversation; raw geometry is not in chat text.
     """
-    if not re.fullmatch(r'[a-zA-Z0-9_-]{1,64}', layer_id):
-        raise ValueError('layer_id must contain 1..64 letters, digits, _ or -')
-    if not re.fullmatch(r'#[0-9a-fA-F]{6}', color):
-        raise ValueError('color must be a hex RGB color')
-    layers = state.get('map_layers', {})
+    if not re.fullmatch(r"[a-zA-Z0-9_-]{1,64}", layer_id):
+        raise ValueError("layer_id must contain 1..64 letters, digits, _ or -")
+    if not re.fullmatch(r"#[0-9a-fA-F]{6}", color):
+        raise ValueError("color must be a hex RGB color")
+    layers = state.get("map_layers", {})
     changes = {}
     camera = None
-    if operation == 'upsert':
+    if operation == "upsert":
         if layer_id not in layers and len(layers) >= 20:
-            raise ValueError('Map has 20 layers; remove unused layers first')
+            raise ValueError("Map has 20 layers; remove unused layers first")
         artifact = find_geo_result(state, data_ref)
-        if artifact is None or variant not in artifact['collections']:
-            raise ValueError('Use a data_ref and variant from an earlier geographic tool result')
-        data = artifact['collections'][variant]
+        if artifact is None or variant not in artifact["collections"]:
+            raise ValueError("Use a data_ref and variant from an earlier geographic tool result")
+        data = artifact["collections"][variant]
         if feature_indices is not None:
-            if not feature_indices or any(index < 0 or index >= len(data['features']) for index in feature_indices):
-                raise ValueError('feature_indices must refer to existing features in the selected variant')
-            data = collection([data['features'][index] for index in dict.fromkeys(feature_indices)])
-        if not data['features']:
-            raise ValueError('No geographic objects available to display')
-        if kind in ('points', 'cones'):
-            data = collection([feature(f['geometry'] if f['geometry']['type'] == 'Point'
-                                       else {'type': 'Point', 'coordinates': f['properties']['center']},
-                                       **f['properties'])
-                               for f in data['features']
-                               if f['geometry']['type'] == 'Point' or 'center' in f['properties']])
-            if not data['features']:
-                raise ValueError('This result has no object locations; use geojson')
-        changes[layer_id] = {'id': layer_id, 'title': (title or layer_id)[:100],
-                             'kind': kind, 'color': color, 'visible': True, 'data': data,
-                             'radius_m': radius_m, 'height_m': height_m,
-                             'illustrative': kind == 'cones', 'data_ref': data_ref, 'variant': variant,
-                             'feature_indices': feature_indices, 'show_labels': show_labels}
-    elif operation == 'clear':
+            if not feature_indices or any(index < 0 or index >= len(data["features"]) for index in feature_indices):
+                raise ValueError("feature_indices must refer to existing features in the selected variant")
+            data = collection([data["features"][index] for index in dict.fromkeys(feature_indices)])
+        if not data["features"]:
+            raise ValueError("No geographic objects available to display")
+        if kind in ("points", "cones"):
+            data = collection(
+                [
+                    feature(
+                        (
+                            f["geometry"]
+                            if f["geometry"]["type"] == "Point"
+                            else {"type": "Point", "coordinates": f["properties"]["center"]}
+                        ),
+                        **f["properties"],
+                    )
+                    for f in data["features"]
+                    if f["geometry"]["type"] == "Point" or "center" in f["properties"]
+                ]
+            )
+            if not data["features"]:
+                raise ValueError("This result has no object locations; use geojson")
+        changes[layer_id] = {
+            "id": layer_id,
+            "title": (title or layer_id)[:100],
+            "kind": kind,
+            "color": color,
+            "visible": True,
+            "data": data,
+            "radius_m": radius_m,
+            "height_m": height_m,
+            "illustrative": kind == "cones",
+            "data_ref": data_ref,
+            "variant": variant,
+            "feature_indices": feature_indices,
+            "show_labels": show_labels,
+        }
+    elif operation == "clear":
         changes = {key: None for key in layers}
     else:
         if layer_id not in layers:
-            raise ValueError('Unknown layer_id; use a layer from the current map state')
-        if operation == 'remove':
+            raise ValueError("Unknown layer_id; use a layer from the current map state")
+        if operation == "remove":
             changes[layer_id] = None
-        elif operation == 'set_labels':
-            changes[layer_id] = {**layers[layer_id], 'show_labels': show_labels}
-        elif operation in ('hide', 'show'):
-            changes[layer_id] = {**layers[layer_id], 'visible': operation == 'show'}
-    if operation in ('upsert', 'focus') and fit_bounds:
-        camera = {'layer_id': layer_id, 'revision': str(uuid4()),
-                  'pitch': 55 if changes.get(layer_id, layers.get(layer_id, {})).get('kind') == 'cones' else 0}
-    result = {'operation': operation, 'layer_id': layer_id, 'status': 'ok'}
-    if operation in ('upsert', 'set_labels'):
-        result['show_labels'] = show_labels
-    if operation == 'upsert':
-        result['feature_count'] = len(data['features'])
-        result['feature_names'] = [f['properties'].get('name') for f in data['features']]
-    if operation == 'upsert' and kind == 'cones':
-        result['note'] = f'Illustrative cones: radius {radius_m} m, height {height_m} m; not terrain visibility or measured height.'
-    update = {'map_layers': changes, 'messages': [ToolMessage(
-        content=json.dumps(result, ensure_ascii=False), tool_call_id=tool_call_id)]}
+        elif operation == "set_labels":
+            changes[layer_id] = {**layers[layer_id], "show_labels": show_labels}
+        elif operation in ("hide", "show"):
+            changes[layer_id] = {**layers[layer_id], "visible": operation == "show"}
+    if operation in ("upsert", "focus") and fit_bounds:
+        camera = {
+            "layer_id": layer_id,
+            "revision": str(uuid4()),
+            "pitch": 55 if changes.get(layer_id, layers.get(layer_id, {})).get("kind") == "cones" else 0,
+        }
+    result = {"operation": operation, "layer_id": layer_id, "status": "ok"}
+    if operation in ("upsert", "set_labels"):
+        result["show_labels"] = show_labels
+    if operation == "upsert":
+        result["feature_count"] = len(data["features"])
+        result["feature_names"] = [f["properties"].get("name") for f in data["features"]]
+    if operation == "upsert" and kind == "cones":
+        result["note"] = (
+            f"Illustrative cones: radius {radius_m} m, height {height_m} m; not terrain visibility or measured height."
+        )
+    update = {
+        "map_layers": changes,
+        "messages": [ToolMessage(content=json.dumps(result, ensure_ascii=False), tool_call_id=tool_call_id)],
+    }
     if camera:
-        update['map_camera'] = camera
+        update["map_camera"] = camera
     return Command(update=update)
 
 
-@tool(response_format='content_and_artifact')
+@tool(response_format="content_and_artifact")
 def compose_routes(segments: list[dict], state: Annotated[dict, InjectedState]):
     """Combine 1–8 VERIFIED route segments into one map layer, in supplied order.
     Each segment: {data_ref: verified plan_route reference, variant: exact map variant}.
@@ -260,39 +305,55 @@ def compose_routes(segments: list[dict], state: Annotated[dict, InjectedState]):
     Unknown refs, point-only collections and disconnected segments are rejected.
     """
     if not 1 <= len(segments) <= 8:
-        raise ValueError('Provide 1–8 verified route segments')
+        raise ValueError("Provide 1–8 verified route segments")
     features, summaries, previous_end = [], [], None
     for index, segment in enumerate(segments):
-        ref, variant = segment.get('data_ref'), segment.get('variant')
+        ref, variant = segment.get("data_ref"), segment.get("variant")
         artifact = find_geo_result(state, ref)
-        if not artifact or variant not in artifact['collections']:
-            raise ValueError('Unknown route data_ref or variant')
-        if not any(key in artifact.get('result', {}) for key in ('results', 'length_m', 'itineraries', 'segment_count')):
-            raise ValueError('Reference is not a calculated route result')
-        route = artifact['collections'][variant]
-        lines = [f for f in route['features'] if f['geometry']['type'] == 'LineString'
-                 and len(f['geometry'].get('coordinates', [])) >= 2]
+        if not artifact or variant not in artifact["collections"]:
+            raise ValueError("Unknown route data_ref or variant")
+        if not any(
+            key in artifact.get("result", {}) for key in ("results", "length_m", "itineraries", "segment_count")
+        ):
+            raise ValueError("Reference is not a calculated route result")
+        route = artifact["collections"][variant]
+        lines = [
+            f
+            for f in route["features"]
+            if f["geometry"]["type"] == "LineString" and len(f["geometry"].get("coordinates", [])) >= 2
+        ]
         if not lines:
-            raise ValueError('Segment contains no verified route lines')
-        start, end = lines[0]['geometry']['coordinates'][0], lines[-1]['geometry']['coordinates'][-1]
+            raise ValueError("Segment contains no verified route lines")
+        start, end = lines[0]["geometry"]["coordinates"][0], lines[-1]["geometry"]["coordinates"][-1]
         if previous_end is not None:
             from math import radians, sin, cos, asin, sqrt
+
             lon1, lat1, lon2, lat2 = map(radians, [*previous_end, *start])
-            distance = 2*6371000*asin(min(1,sqrt(sin((lat2-lat1)/2)**2+cos(lat1)*cos(lat2)*sin((lon2-lon1)/2)**2)))
+            distance = (
+                2
+                * 6371000
+                * asin(min(1, sqrt(sin((lat2 - lat1) / 2) ** 2 + cos(lat1) * cos(lat2) * sin((lon2 - lon1) / 2) ** 2)))
+            )
             if distance > 750:
-                raise ValueError('Route segments are disconnected by more than 750 m; calculate the missing leg')
+                raise ValueError("Route segments are disconnected by more than 750 m; calculate the missing leg")
         previous_end = end
-        features.extend([{**f, 'properties':{**f.get('properties',{}), 'segment_index':index}}
-                         for f in route['features']])
-        result = artifact.get('result', {})
-        if 'results' in result:
-            mode = variant.split('-', 1)[0]
-            result = result['results'].get(mode, {})
-            if mode == 'transit' and variant.startswith('transit-option-'):
-                option = int(variant.rsplit('-', 1)[-1])-1
-                result = {**result, 'itineraries':result.get('itineraries',[])[option:option+1]}
-        summaries.append({'data_ref':ref,'variant':variant,'result':result})
-    return map_result({'segments':summaries,'segment_count':len(segments),
-                       'note':'Segment estimates are independent; transit transfers/timetable continuity are not validated. '
-                              'Road snapping offsets can leave gaps; these are not verified walking connectors.'},
-                      {'default':collection(features)})
+        features.extend(
+            [{**f, "properties": {**f.get("properties", {}), "segment_index": index}} for f in route["features"]]
+        )
+        result = artifact.get("result", {})
+        if "results" in result:
+            mode = variant.split("-", 1)[0]
+            result = result["results"].get(mode, {})
+            if mode == "transit" and variant.startswith("transit-option-"):
+                option = int(variant.rsplit("-", 1)[-1]) - 1
+                result = {**result, "itineraries": result.get("itineraries", [])[option : option + 1]}
+        summaries.append({"data_ref": ref, "variant": variant, "result": result})
+    return map_result(
+        {
+            "segments": summaries,
+            "segment_count": len(segments),
+            "note": "Segment estimates are independent; transit transfers/timetable continuity are not validated. "
+            "Road snapping offsets can leave gaps; these are not verified walking connectors.",
+        },
+        {"default": collection(features)},
+    )

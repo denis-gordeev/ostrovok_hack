@@ -45,14 +45,22 @@ def run_items(store: RawStore, step: str, items: Iterable[Item], *, retry_failed
                 report.errors += 1
                 continue
             store.save(
-                step, item.key, request=item.request,
-                status_code=getattr(e, "status_code", None), body=None, error=str(e),
+                step,
+                item.key,
+                request=item.request,
+                status_code=getattr(e, "status_code", None),
+                body=None,
+                error=str(e),
             )
             report.errors += 1
             continue
         store.save(
-            step, item.key, request=item.request,
-            status_code=f.status_code, body=f.body, incomplete=f.incomplete,
+            step,
+            item.key,
+            request=item.request,
+            status_code=f.status_code,
+            body=f.body,
+            incomplete=f.incomplete,
         )
         report.done += 1
     return report

@@ -62,9 +62,24 @@ def replace_events(conn: psycopg.Connection, rows: list[EventRow]) -> None:
             " place_url, raw) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
             [
                 (
-                    r.event_id, r.title, r.slug, r.site_url, r.description, r.body_text, r.categories, r.tags,
-                    r.age_restriction, r.price, r.is_free, r.favorites_count, r.place_title, r.place_address,
-                    r.place_lat, r.place_lon, r.place_url, Jsonb(r.raw),
+                    r.event_id,
+                    r.title,
+                    r.slug,
+                    r.site_url,
+                    r.description,
+                    r.body_text,
+                    r.categories,
+                    r.tags,
+                    r.age_restriction,
+                    r.price,
+                    r.is_free,
+                    r.favorites_count,
+                    r.place_title,
+                    r.place_address,
+                    r.place_lat,
+                    r.place_lon,
+                    r.place_url,
+                    Jsonb(r.raw),
                 )
                 for r in rows
             ],

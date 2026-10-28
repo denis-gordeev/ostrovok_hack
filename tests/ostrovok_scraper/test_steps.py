@@ -31,7 +31,8 @@ class FakeStore:
 
     def existing_keys(self, step, *, include_failed=True):
         return {
-            k for (s, k), (_, err, inc) in self.rows.items()
+            k
+            for (s, k), (_, err, inc) in self.rows.items()
             if s == step and (include_failed or (err is None and not inc))
         }
 
@@ -57,6 +58,7 @@ def test_run_items_skips_existing_records_errors_and_retries_on_flag():
     def bad(key):
         def fetch():
             raise OstrovokHttpError("bad request", status_code=400)
+
         return Item(key, {"k": key}, fetch)
 
     report = run_items(store, "rates", [ok("done"), ok("failed"), ok("new"), bad("broken")])
@@ -95,10 +97,16 @@ def test_run_items_saves_incomplete_flag():
 def test_plan_rate_requests():
     available = {"a": {REF_WD, REF_WE}, "b": {date(2026, 11, 18)}}
     guests = {(4, REF_WD): {"a", "b"}, (8, REF_WE): {"a"}}
-    assert sorted(plan_rate_requests(["a", "b"], available, guests, CFG)) == sorted([
-        ("a", REF_WD, 2), ("a", REF_WE, 2), ("a", REF_WD, 4), ("a", REF_WE, 8),
-        ("b", date(2026, 11, 18), 2), ("b", REF_WD, 4),
-    ])
+    assert sorted(plan_rate_requests(["a", "b"], available, guests, CFG)) == sorted(
+        [
+            ("a", REF_WD, 2),
+            ("a", REF_WE, 2),
+            ("a", REF_WD, 4),
+            ("a", REF_WE, 8),
+            ("b", date(2026, 11, 18), 2),
+            ("b", REF_WD, 4),
+        ]
+    )
 
 
 def test_plan_rate_requests_when_window_misses_reference_nights():
@@ -127,8 +135,13 @@ def test_serp_items_keys():
 def test_inputs_from_serp_bodies():
     store = FakeStore()
     store.save("serp", "night=2026-11-17;guests=2", request={}, status_code=200, body=load_fixture("serp_map.json"))
-    store.save("serp_guests", "night=2026-11-20;guests=4", request={}, status_code=200,
-               body={"map_hotels": [load_fixture("serp_map.json")["map_hotels"][0]]})
+    store.save(
+        "serp_guests",
+        "night=2026-11-20;guests=4",
+        request={},
+        status_code=200,
+        body={"map_hotels": [load_fixture("serp_map.json")["map_hotels"][0]]},
+    )
     assert set(serp_hotels(store)) == {"don_kikhot_hotel_", "gostinitsa_amsterdam_na_tukaya_hotel"}
     assert available_nights(store)["don_kikhot_hotel_"] == {REF_WD}
     assert guests_hotels(store) == {(4, REF_WE): {"don_kikhot_hotel_"}}
@@ -151,9 +164,15 @@ def test_page_facts_tolerates_missing_reviews():
     from ostrovok_scraper.steps.inputs import page_facts
 
     store = FakeStore()
-    store.save("hotels", "hotel=a", request={}, status_code=200,
-               body={"hotel": {"location": {"regionId": 1993}}, "reviews": None})
-    store.save("hotels", "hotel=b", request={}, status_code=200,
-               body={"hotel": {"location": {"regionId": 7}}, "reviews": {}})
+    store.save(
+        "hotels",
+        "hotel=a",
+        request={},
+        status_code=200,
+        body={"hotel": {"location": {"regionId": 1993}}, "reviews": None},
+    )
+    store.save(
+        "hotels", "hotel=b", request={}, status_code=200, body={"hotel": {"location": {"regionId": 7}}, "reviews": {}}
+    )
     store.save("hotels", "hotel=c", request={}, status_code=200, body={"hotel": {"location": {}}})
     assert page_facts(store) == {"a": (1993, 0), "b": (7, 0)}

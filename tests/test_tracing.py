@@ -147,7 +147,10 @@ async def test_tracer_without_file_prints_only_to_terminal(settings, terminal):
     context = AgentContext(llm=llm, settings=settings, today=lambda: TODAY)
 
     await ask(
-        graph, "Хочу отель", config={"configurable": {"thread_id": "t1"}}, context=context,
+        graph,
+        "Хочу отель",
+        config={"configurable": {"thread_id": "t1"}},
+        context=context,
         tracer=AgentTracer(out=terminal, jsonl_path=None),
     )
 

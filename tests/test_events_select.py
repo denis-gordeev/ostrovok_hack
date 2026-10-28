@@ -50,10 +50,10 @@ def test_one_off_event_in_visit_is_picked_with_its_sessions_in_visit():
 
 def test_visit_covers_checkin_to_checkout_day_inclusive():
     selection = pick(
-        event(1, show(18, 20)),        # накануне заезда
-        event(2, show(19, 0)),         # в полночь дня заезда
-        event(3, show(22, 19)),        # вечер дня выезда
-        event(4, show(23, 0)),         # следующий день после выезда
+        event(1, show(18, 20)),  # накануне заезда
+        event(2, show(19, 0)),  # в полночь дня заезда
+        event(3, show(22, 19)),  # вечер дня выезда
+        event(4, show(23, 0)),  # следующий день после выезда
     )
     assert sorted(one_off_ids(selection)) == [2, 3]
 

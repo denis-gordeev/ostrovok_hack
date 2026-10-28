@@ -68,9 +68,7 @@ def _parse_rate(rate: dict, *, hotel_id: str, night: date, requested_guests: int
     )
 
 
-def parse_rates(
-    body: dict, *, hotel_id: str, night: date, requested_guests: int
-) -> tuple[list[RateRow], int]:
+def parse_rates(body: dict, *, hotel_id: str, night: date, requested_guests: int) -> tuple[list[RateRow], int]:
     """Тарифы ответа: по одной строке на (rg_hash, meal, payment_type), самая дешёвая; и число пропущенных."""
     best: dict[tuple[str, str, str], RateRow] = {}
     skipped = 0

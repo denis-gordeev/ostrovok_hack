@@ -48,7 +48,9 @@ def test_search_marks_incomplete_after_max_polls():
 
     def handler(request):
         if request.method == "GET":
-            return httpx.Response(200, json={"session_info": {"session": {"id": "s1"}, "region_related": {"region": {}}}})
+            return httpx.Response(
+                200, json={"session_info": {"session": {"id": "s1"}, "region_related": {"region": {}}}}
+            )
         posts.append(1)
         return httpx.Response(200, json={"search_finished": False})
 
@@ -97,7 +99,11 @@ def test_rates_and_reviews_params():
     api.reviews("x", 2)
     assert seen[1].url.path == "/hotel/search/v1/site/reviews"
     assert dict(seen[1].url.params) == {
-        "hotel": "x", "lang": "ru", "sort": "relevance_desc", "page": "2", "page_size": "500",
+        "hotel": "x",
+        "lang": "ru",
+        "sort": "relevance_desc",
+        "page": "2",
+        "page_size": "500",
     }
 
 

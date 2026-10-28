@@ -70,8 +70,16 @@ class FakeScores:
             raise OutsideKazanError("вне")
         mode = ModeScore(score=self.scores[(lat, lon)], label="x")
         return NoiseReport(
-            lat=lat, lon=lon, inside_building=False, day=mode, night=mode, quiet_side=None,
-            main_sources=[], model_level_day=0.0, model_level_night=0.0, osm_timestamp="t",
+            lat=lat,
+            lon=lon,
+            inside_building=False,
+            day=mode,
+            night=mode,
+            quiet_side=None,
+            main_sources=[],
+            model_level_day=0.0,
+            model_level_night=0.0,
+            osm_timestamp="t",
         )
 
 
@@ -109,8 +117,13 @@ class FakeConn:
 
     def fetchall(self):
         return [
-            {"hotel_id": "1", "name": "A", "lat": 55.79, "lon": 49.11,
-             "minuses": ["Шумно, окна на дорогу", None, "Всё отлично", "Тонкие стены, трамвай"]},
+            {
+                "hotel_id": "1",
+                "name": "A",
+                "lat": 55.79,
+                "lon": 49.11,
+                "minuses": ["Шумно, окна на дорогу", None, "Всё отлично", "Тонкие стены, трамвай"],
+            },
         ]
 
 

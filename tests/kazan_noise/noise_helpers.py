@@ -168,8 +168,15 @@ def kazan_snapshot(data_dir: Path) -> Features:
     lats, lons = unproject_xy(xs, ys)
     boundary_wgs84 = Polygon(zip(lons.tolist(), lats.tolist(), strict=True))
     road = Source(
-        "road", "way/1", "ул. Тестовая", "primary",
-        LineString([(KAZAN_X - 1500, KAZAN_Y), (KAZAN_X + 1500, KAZAN_Y)]), 0.5, 80.0, 72.0, 1000,
+        "road",
+        "way/1",
+        "ул. Тестовая",
+        "primary",
+        LineString([(KAZAN_X - 1500, KAZAN_Y), (KAZAN_X + 1500, KAZAN_Y)]),
+        0.5,
+        80.0,
+        72.0,
+        1000,
     )
     buildings: list[tuple] = [(box(KAZAN_X - 10, KAZAN_Y + 20, KAZAN_X + 10, KAZAN_Y + 40), 15.0)]
     # Ряд домов вдоль дороги с севера.

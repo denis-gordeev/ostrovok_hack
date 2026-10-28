@@ -135,5 +135,8 @@ def test_fetch_with_fake_client(tmp_path, monkeypatch, capsys):
     main(["fetch"])
     assert "boundary" in capsys.readouterr().out
     assert sorted(p.name for p in (tmp_path / "raw").iterdir()) == [
-        "areas.json.gz", "boundary.json.gz", "buildings.json.gz", "lines.json.gz"
+        "areas.json.gz",
+        "boundary.json.gz",
+        "buildings.json.gz",
+        "lines.json.gz",
     ]

@@ -32,7 +32,10 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--nights", type=int, default=None, metavar="N", help="только первые N ночей окна")
         p.add_argument("--retry-failed", action="store_true", help="повторить ключи с ошибкой и неполные")
         p.add_argument(
-            "--today", type=date.fromisoformat, default=None, metavar="YYYY-MM-DD",
+            "--today",
+            type=date.fromisoformat,
+            default=None,
+            metavar="YYYY-MM-DD",
             help="день сбора (по умолчанию сегодня по Москве)",
         )
     return parser
@@ -103,7 +106,10 @@ def _run(args: argparse.Namespace, cfg: ScraperConfig) -> None:
         if all_steps or cmd == "serp-guests":
             _print_report(run_serp_guests(api, store, cfg, retry_failed=args.retry_failed))
         for name, run in (
-            ("hotels", run_hotels), ("child-age", run_child_age), ("rates", run_rates), ("reviews", run_reviews),
+            ("hotels", run_hotels),
+            ("child-age", run_child_age),
+            ("rates", run_rates),
+            ("reviews", run_reviews),
         ):
             if all_steps or cmd == name:
                 _print_report(run(api, store, cfg, limit_hotels=args.limit_hotels, retry_failed=args.retry_failed))

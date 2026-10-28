@@ -63,8 +63,14 @@ class RawStore:
         self._conn.commit()
 
     def _upsert(
-        self, step: str, key: str, request: dict, status_code: int | None, body: dict | None,
-        error: str | None, incomplete: bool,
+        self,
+        step: str,
+        key: str,
+        request: dict,
+        status_code: int | None,
+        body: dict | None,
+        error: str | None,
+        incomplete: bool,
     ) -> None:
         self._conn.execute(
             """

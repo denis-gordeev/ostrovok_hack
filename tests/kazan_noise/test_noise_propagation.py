@@ -29,9 +29,16 @@ def test_energy_sum():
     assert energy_sum(np.array([])) == -math.inf
 
 
-@pytest.mark.parametrize("profile, delta, vertices, shield", [
-    ([(50, 10)], 1.1920, 1, 15.80), ([(50, 1)], 0.0, 0, 0.0), ([(50, 50)], 38.2379, 1, 20.0),
-    ([(45, 20), (55, 20)], 6.7419, 2, 23.04), ([(45, 60), (55, 60)], None, 2, 25.0)])
+@pytest.mark.parametrize(
+    "profile, delta, vertices, shield",
+    [
+        ([(50, 10)], 1.1920, 1, 15.80),
+        ([(50, 1)], 0.0, 0, 0.0),
+        ([(50, 50)], 38.2379, 1, 20.0),
+        ([(45, 20), (55, 20)], 6.7419, 2, 23.04),
+        ([(45, 60), (55, 60)], None, 2, 25.0),
+    ],
+)
 def test_path_difference_and_shield(profile, delta, vertices, shield):
     d, n = path_difference(0.5, 4.0, 100.0, profile)
     assert n == vertices and (delta is None or d == pytest.approx(delta, abs=1e-3))
@@ -102,7 +109,17 @@ def test_small_area_energy_is_exact():
 def test_split_ways_match_single_way():
     single = road()
     ways = [
-        Source("road", f"way/{i}", None, "primary", LineString([(-4000 + 30 * i, 0), (-4000 + 30 * (i + 1), 0)]), 0.0, 0.0, 0.0, 1e9)
+        Source(
+            "road",
+            f"way/{i}",
+            None,
+            "primary",
+            LineString([(-4000 + 30 * i, 0), (-4000 + 30 * (i + 1), 0)]),
+            0.0,
+            0.0,
+            0.0,
+            1e9,
+        )
         for i in range(266)
     ]
     for ry in (20, 600):

@@ -83,8 +83,12 @@ async def test_tatarstan_tool_passes_request_and_returns_candidates(run):
     llm = ScriptedChatModel(
         responses=[
             tatarstan_call(
-                checkin="2026-11-19", checkout="2026-11-22", city="Казань", children_ages=[4],
-                near={"lat": 55.7986, "lon": 49.1056}, meal="breakfast",
+                checkin="2026-11-19",
+                checkout="2026-11-22",
+                city="Казань",
+                children_ages=[4],
+                near={"lat": 55.7986, "lon": 49.1056},
+                meal="breakfast",
             ),
             AIMessage("Нашёл Korston"),
         ]
@@ -136,8 +140,13 @@ NOISE_REPORT = NoiseReport(
     quiet_side=None,
     main_sources=[
         SourceInfo(
-            kind="road", subtype="primary", name="улица Баумана", distance_m=35,
-            share_day=0.7, share_night=0.5, shielded=False,
+            kind="road",
+            subtype="primary",
+            name="улица Баумана",
+            distance_m=35,
+            share_day=0.7,
+            share_night=0.5,
+            shielded=False,
         )
     ],
     model_level_day=63.2,
@@ -161,9 +170,11 @@ class FakeNoise:
     def noise_many(self, points: list[tuple[float, float]]) -> list[NoiseReport | OutsideKazanError]:
         self.calls.extend(points)
         return [
-            OutsideKazanError("Точка вне городского округа Казань")
-            if (lat, lon) in self.outside
-            else NOISE_REPORT.model_copy(update={"lat": lat, "lon": lon})
+            (
+                OutsideKazanError("Точка вне городского округа Казань")
+                if (lat, lon) in self.outside
+                else NOISE_REPORT.model_copy(update={"lat": lat, "lon": lon})
+            )
             for lat, lon in points
         ]
 

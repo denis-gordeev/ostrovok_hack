@@ -120,8 +120,6 @@ def load_grid(path: Path) -> Grid:
         with np.load(path, allow_pickle=False) as z:
             if str(z["weights_hash"]) != weights_hash():
                 raise SnapshotMissingError(f"Сетка {path} построена при других весах, {_REBUILD_HINT}")
-            return Grid(
-                z["cells"], z["x"], z["y"], z["built_up"], z["day_db"], z["night_db"], str(z["osm_timestamp"])
-            )
+            return Grid(z["cells"], z["x"], z["y"], z["built_up"], z["day_db"], z["night_db"], str(z["osm_timestamp"]))
     except DAMAGED_ERRORS as exc:
         raise SnapshotMissingError(f"Сетка {path} повреждена ({type(exc).__name__}), {_REBUILD_HINT}") from exc

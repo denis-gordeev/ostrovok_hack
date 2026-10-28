@@ -203,9 +203,7 @@ def air_db(d: np.ndarray) -> np.ndarray:
     return w.AIR_DB_PER_M * d
 
 
-def path_difference(
-    hs: float, hr: float, dist: float, profile: Sequence[tuple[float, float]]
-) -> tuple[float, int]:
+def path_difference(hs: float, hr: float, dist: float, profile: Sequence[tuple[float, float]]) -> tuple[float, int]:
     """Разность хода δ (м) и число вершин верхней выпуклой оболочки над лучом.
 
     profile — точки (расстояние от источника, высота препятствия) строго между источником и приёмником.
