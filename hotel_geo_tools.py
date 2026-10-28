@@ -93,7 +93,7 @@ def noise_payload(points):
         return result
 
 
-def select_quiet_hotels(hotels, assessment):
+def select_quiet_hotels(hotels, assessment, quiet=True):
     """Kazan requires verified day AND night <=50; ties retain original ranking."""
     reports = assessment.get("points", [])
     by_point = {(p["lat"], p["lon"]): p for p in reports}
@@ -113,7 +113,7 @@ def select_quiet_hotels(hotels, assessment):
             unknown += 1
             continue
         score = max(report["day"]["score"], report["night"]["score"])
-        if score > NOISE_LIMIT:
+        if quiet and score > NOISE_LIMIT:
             rejected += 1
             continue
         data["noise"] = report
@@ -133,7 +133,7 @@ async def find_hotels(request, client=None):
     async def assess(result):
         points = [NoisePoint(lat=h.lat, lon=h.lon) for h in result.hotels if (h.city or "").casefold() == "казань"]
         assessment = await asyncio.to_thread(noise_payload, points) if points else {"points": []}
-        selected, counts = select_quiet_hotels(result.hotels, assessment)
+        selected, counts = select_quiet_hotels(result.hotels, assessment, params.quiet)
         return selected, counts, assessment
 
     hotels, counts, assessment = await assess(result)
