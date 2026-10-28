@@ -6,7 +6,7 @@ import json
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from langchain_core.messages import SystemMessage
+from langchain_core.messages import SystemMessage, HumanMessage, ToolMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from langgraph.graph import START, END, StateGraph
@@ -269,6 +269,27 @@ SYSTEM_PROMPT += """
 """
 
 
+def route_research_ready(state):
+    """Stop open-ended place discovery once a requested route has enough verified POIs."""
+    if state.get('call_usage', {}).get('by_tool', {}).get('overpass_query', 0) < 8:
+        return False
+    messages = state.get('messages', [])
+    start = next((i for i in range(len(messages)-1,-1,-1) if isinstance(messages[i],HumanMessage)),0)
+    import re
+    if not re.search('маршрут|добраться|доехать|дойти', str(messages[start].content), re.I):
+        return False
+    places = set()
+    for message in messages[start:]:
+        if not isinstance(message, ToolMessage) or not isinstance(message.artifact,dict):
+            continue
+        result = message.artifact.get('result',{})
+        for item in [*result.get('elements',[]), *result.get('features',[])]:
+            tags = item.get('tags',{})
+            if tags.get('amenity') in ('school','museum','theatre','place_of_worship') or tags.get('historic') or tags.get('tourism') or tags.get('place') in ('suburb','neighbourhood','quarter'):
+                places.add((item.get('type'), item.get('id'), tags.get('name')))
+    return len(places) >= 2
+
+
 def build_agent(model=None, *, summary_model=None, checkpointer=None):
     from langmem.short_term import SummarizationNode
 
@@ -335,7 +356,15 @@ def build_agent(model=None, *, summary_model=None, checkpointer=None):
                      'по data_ref для точных значений, источников и исходного времени получения. '
                      'Чтение сохранённого результата не обновляет дату его получения. '
                      'Точка представления объекта не доказывает наличие входа. Не выдумывай data_ref.')
-        response = model_with_tools.invoke([SystemMessage(prompt), *state["summarized_messages"]])
+        engine = model_with_tools
+        if route_research_ready(state):
+            engine = model.bind_tools([t for t in TOOLS if t.name not in ('overpass_query','search_osm','wikipedia_search','wikipedia_article','search_web')])
+            prompt += ('\nПроверенных географических точек уже достаточно для частичного маршрута. '
+                       'Этап общего поиска завершён; сейчас доступны расчёт участков, объединение '
+                       'и карта. Рассчитай plan_route между релевантными найденными точками, '
+                       'compose_routes при нескольких участках и update_map. Не продолжай '
+                       'уточнять отсутствующее имя завода. Не включай нерелевантные объекты.')
+        response = engine.invoke([SystemMessage(prompt), *state["summarized_messages"]])
         return {"messages": [response]}
 
     graph = StateGraph(GeoState)
@@ -355,11 +384,15 @@ def build_agent(model=None, *, summary_model=None, checkpointer=None):
         if usage['model_calls'] >= limits.model:
             return stopped
         usage['model_calls'] += 1
-        final_messages = [SystemMessage(SYSTEM_PROMPT +
+        history = list(state.get('summarized_messages') or state['messages'])
+        if history[-1].id != state['messages'][-1].id:
+            history.append(state['messages'][-1])
+        map_note = '\nФактические слои карты: ' + json.dumps(list(state.get('map_layers',{})),ensure_ascii=False)
+        final_messages = [SystemMessage(SYSTEM_PROMPT + map_note +
             '\nБюджет инструментов исчерпан. Верни полезный частичный ответ по уже найденным '
             'данным и карте, явно укажи невыполненные части. Новые инструменты недоступны; '
             'не утверждай, что неподтверждённый маршрут рассчитан. Не выдумывай цены и даты.'),
-            *state['messages'], *stopped['messages'][:-1]]
+            *history, *stopped['messages'][:-1]]
         try:
             response = retry_remote_call(lambda: model.invoke(final_messages))
         except Exception:

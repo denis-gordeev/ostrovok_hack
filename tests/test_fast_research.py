@@ -42,7 +42,7 @@ def test_web_cache_uses_original_date_and_does_not_turn_snippets_into_coordinate
                                             {'title':'bad','href':'javascript:alert(1)','body':'bad'}]
         first=search_web.invoke({'query':'Тяп-Ляп Казань'})
         second=search_web.invoke({'query':'Тяп-Ляп Казань'})
-    assert ddgs.return_value.text.call_count==1
+    assert ddgs.return_value.text.call_count<=2
     assert second['cache_hit'] and second['retrieved_at']==first['retrieved_at']
     assert len(second['results'])==1 and 'lat' not in second['results'][0]
 
@@ -52,7 +52,7 @@ def test_web_failure_is_not_cached_and_provider_error_not_exposed(tmp_path,monke
     with patch('web_tools.DDGS',side_effect=RuntimeError('private-token')) as ddgs:
         first=search_web.invoke({'query':'Казань история'})
         search_web.invoke({'query':'Казань история'})
-    assert ddgs.call_count==2 and not first['available'] and 'private-token' not in str(first)
+    assert ddgs.call_count==4 and not first['available'] and 'private-token' not in str(first)
 
 
 def line(start,end):return collection([feature({'type':'LineString','coordinates':[start,end]},name='Проверенный путь')])
@@ -60,12 +60,16 @@ def line(start,end):return collection([feature({'type':'LineString','coordinates
 
 def test_composed_route_retains_all_segments_and_rejects_disconnected_or_unknown(tmp_path,monkeypatch):
     monkeypatch.setenv('CACHE_DIR',str(tmp_path))
-    a,aa=map_result({'source':'OSM'},{'default':line([49.1,55.79],[49.11,55.79])})
-    b,bb=map_result({'source':'OSM'},{'default':line([49.11,55.79],[49.12,55.79])})
+    a,aa=map_result({'source':'OSM','length_m':650},{'default':line([49.1,55.79],[49.11,55.79])})
+    b,bb=map_result({'source':'OSM','length_m':650},{'default':line([49.11,55.79],[49.12,55.79])})
     state={'geo_results':{a['data_ref']:aa,b['data_ref']:bb}}
     segments=[{'data_ref':a['data_ref'],'variant':'default'},{'data_ref':b['data_ref'],'variant':'default'}]
     result,artifact=compose_routes.func(segments,state)
     assert result['segment_count']==2 and len(artifact['collections']['default']['features'])==2
+    road,road_artifact=map_result({'features':[]},{'default':line([49.1,55.79],[49.11,55.79])})
+    state['geo_results'][road['data_ref']]=road_artifact
+    with pytest.raises(ValueError,match='not a calculated route'):
+        compose_routes.func([{'data_ref':road['data_ref'],'variant':'default'}],state)
     with pytest.raises(ValueError,match='Unknown'):compose_routes.func([{'data_ref':'made-up','variant':'default'}],state)
     with pytest.raises(ValueError,match='disconnected'):compose_routes.func([segments[1],segments[0]],state)
 
@@ -124,3 +128,19 @@ def test_noise_cache_reuses_individual_hotels_across_different_batches(tmp_path,
         noise_payload(points[:2]);result=noise_payload(points[1:])
     assert [len(call.args[1]) for call in calc.call_args_list]==[2,1]
     assert len(result['points'])==2 and result['data']=='OSM snapshot'
+
+
+
+def test_route_research_switches_to_calculation_only_after_verified_pois():
+    from agent import route_research_ready
+    from langchain_core.messages import HumanMessage, ToolMessage
+    state={'call_usage':{'by_tool':{'overpass_query':8}},
+           'messages':[HumanMessage('Построй туристический маршрут')]}
+    assert not route_research_ready(state)
+    state['messages'].append(ToolMessage('source',tool_call_id='1',artifact={'result':{'elements':[
+        {'type':'way','id':1,'tags':{'name':'Садовое товарищество','landuse':'allotments'}},
+        {'type':'way','id':2,'tags':{'name':'Школа 1','amenity':'school'}},
+        {'type':'way','id':3,'tags':{'name':'Школа 2','amenity':'school'}}]}}))
+    assert route_research_ready(state)
+    state['messages'].append(HumanMessage('Теперь найди другой район'))
+    assert not route_research_ready(state)

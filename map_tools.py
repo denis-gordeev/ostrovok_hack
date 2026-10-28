@@ -267,6 +267,8 @@ def compose_routes(segments: list[dict], state: Annotated[dict, InjectedState]):
         artifact = find_geo_result(state, ref)
         if not artifact or variant not in artifact['collections']:
             raise ValueError('Unknown route data_ref or variant')
+        if not any(key in artifact.get('result', {}) for key in ('results', 'length_m', 'itineraries', 'segment_count')):
+            raise ValueError('Reference is not a calculated route result')
         route = artifact['collections'][variant]
         lines = [f for f in route['features'] if f['geometry']['type'] == 'LineString'
                  and len(f['geometry'].get('coordinates', [])) >= 2]

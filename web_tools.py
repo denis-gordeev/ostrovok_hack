@@ -4,6 +4,7 @@ import json
 import os
 import tempfile
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -32,10 +33,27 @@ def search_web(query: str = Field(min_length=2, max_length=1000),
     ttl = max(0, int(os.getenv('WEB_SEARCH_CACHE_SECONDS', '21600')))
     if path.exists() and time.time()-path.stat().st_mtime < ttl:
         return {**json.loads(path.read_text()), 'cache_hit': True}
+    timeout = max(1, min(30, int(os.getenv('WEB_SEARCH_TIMEOUT', '15'))))
+    engines = list(dict.fromkeys(backend.split(',')))[:3]
+    def run(engine):
+        return DDGS(timeout=timeout).text(query,region='ru-ru',safesearch='moderate',
+                                         max_results=max_results,backend=engine.strip())
+    executor = ThreadPoolExecutor(max_workers=len(engines))
+    futures = [executor.submit(run,engine) for engine in engines]
+    rows = []
     try:
-        rows = DDGS(timeout=int(os.getenv('WEB_SEARCH_TIMEOUT', '15'))).text(
-            query, region='ru-ru', safesearch='moderate', max_results=max_results, backend=backend)
-    except Exception:
+        for future in as_completed(futures,timeout=timeout):
+            try:
+                rows = future.result()
+            except Exception:
+                continue
+            if rows:
+                break
+    except TimeoutError:
+        pass
+    finally:
+        executor.shutdown(wait=False,cancel_futures=True)
+    if not rows:
         return {'available': False, 'results': [], 'query': query,
                 'note': 'Веб-поиск временно недоступен; это не означает отсутствие сведений.'}
     results = []
