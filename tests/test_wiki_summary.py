@@ -1,6 +1,8 @@
 import copy
 import os
 import unittest
+import httpx
+import openai
 from types import SimpleNamespace
 from unittest.mock import patch
 from wiki_retrieval import summarize_wikipedia, wikipedia_search, wikipedia_article
@@ -38,12 +40,47 @@ class SummaryTests(unittest.TestCase):
             self.assertNotIn('text', compact)
 
     @patch.dict(os.environ, {'LLM_API_KEY': 'test'})
-    def test_failure_does_not_leak_provider_error_or_raw_text(self):
+    def test_failure_returns_evidence_without_leaking_provider_error(self):
         with patch('openai.OpenAI', side_effect=RuntimeError('secret-provider-error')):
-            with self.assertRaises(ValueError) as error:
-                summarize_wikipedia(self.result, 'История')
-            self.assertNotIn('secret-provider-error', str(error.exception))
-            self.assertNotIn('Текст источника', str(error.exception))
+            result = summarize_wikipedia(self.result, 'История')
+            self.assertEqual(result['results'], self.result['results'])
+            self.assertEqual(result['summary_status'], 'unavailable')
+            self.assertNotIn('secret-provider-error', str(result))
+            self.assertNotIn('summary_status', self.result)
+
+    @patch.dict(os.environ, {'LLM_API_KEY': 'test'})
+    def test_transient_summary_timeout_is_retried(self):
+        with patch('openai.OpenAI') as client:
+            create = client.return_value.__enter__.return_value.chat.completions.create
+            create.side_effect = [
+                openai.APITimeoutError(request=httpx.Request('POST', 'https://example.test')),
+                SimpleNamespace(model='test', choices=[SimpleNamespace(message=SimpleNamespace(content='Факт [1]'))]),
+            ]
+            result = summarize_wikipedia(self.result, 'История')
+            self.assertEqual(create.call_count, 2)
+            self.assertEqual(result['summary'], 'Факт [1]')
+
+    @patch.dict(os.environ, {'LLM_API_KEY': 'test'})
+    def test_provider_auth_failure_is_not_retried_and_is_sanitized(self):
+        response = httpx.Response(401, request=httpx.Request('POST', 'https://example.test'))
+        with patch('openai.OpenAI') as client:
+            create = client.return_value.__enter__.return_value.chat.completions.create
+            create.side_effect = openai.AuthenticationError('secret-error', response=response, body=None)
+            result = summarize_wikipedia(self.result, 'История')
+            self.assertEqual(create.call_count, 1)
+            self.assertEqual(result['summary_error'], {'kind':'provider_http_error', 'status_code':401})
+            self.assertNotIn('secret-error', str(result))
+
+    @patch.dict(os.environ, {'LLM_API_KEY': 'test'})
+    def test_empty_summary_keeps_article_text_and_pagination(self):
+        article = {'found':True, **self.result['results'][0], 'next_offset':6000}
+        with patch('openai.OpenAI') as client:
+            create = client.return_value.__enter__.return_value.chat.completions.create
+            create.return_value = SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=''))])
+            result = summarize_wikipedia(article, 'История')
+            self.assertEqual(result['text'], article['text'])
+            self.assertEqual(result['next_offset'], 6000)
+            self.assertEqual(result['summary_error']['kind'], 'empty_response')
 
     def test_invalid_purpose_fails_before_retrieval(self):
         with patch('wiki_retrieval.search_wikipedia') as search:
