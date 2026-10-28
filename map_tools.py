@@ -249,3 +249,48 @@ def update_map(
     if camera:
         update['map_camera'] = camera
     return Command(update=update)
+
+
+@tool(response_format='content_and_artifact')
+def compose_routes(segments: list[dict], state: Annotated[dict, InjectedState]):
+    """Combine 1–8 VERIFIED route segments into one map layer, in supplied order.
+    Each segment: {data_ref: verified plan_route reference, variant: exact map variant}.
+    This combines geometry, NOT public-transport timetables. Calculate chronological
+    transit departures separately; independent per-leg estimates are not a through journey.
+    Unknown refs, point-only collections and disconnected segments are rejected.
+    """
+    if not 1 <= len(segments) <= 8:
+        raise ValueError('Provide 1–8 verified route segments')
+    features, summaries, previous_end = [], [], None
+    for index, segment in enumerate(segments):
+        ref, variant = segment.get('data_ref'), segment.get('variant')
+        artifact = find_geo_result(state, ref)
+        if not artifact or variant not in artifact['collections']:
+            raise ValueError('Unknown route data_ref or variant')
+        route = artifact['collections'][variant]
+        lines = [f for f in route['features'] if f['geometry']['type'] == 'LineString'
+                 and len(f['geometry'].get('coordinates', [])) >= 2]
+        if not lines:
+            raise ValueError('Segment contains no verified route lines')
+        start, end = lines[0]['geometry']['coordinates'][0], lines[-1]['geometry']['coordinates'][-1]
+        if previous_end is not None:
+            from math import radians, sin, cos, asin, sqrt
+            lon1, lat1, lon2, lat2 = map(radians, [*previous_end, *start])
+            distance = 2*6371000*asin(min(1,sqrt(sin((lat2-lat1)/2)**2+cos(lat1)*cos(lat2)*sin((lon2-lon1)/2)**2)))
+            if distance > 750:
+                raise ValueError('Route segments are disconnected by more than 750 m; calculate the missing leg')
+        previous_end = end
+        features.extend([{**f, 'properties':{**f.get('properties',{}), 'segment_index':index}}
+                         for f in route['features']])
+        result = artifact.get('result', {})
+        if 'results' in result:
+            mode = variant.split('-', 1)[0]
+            result = result['results'].get(mode, {})
+            if mode == 'transit' and variant.startswith('transit-option-'):
+                option = int(variant.rsplit('-', 1)[-1])-1
+                result = {**result, 'itineraries':result.get('itineraries',[])[option:option+1]}
+        summaries.append({'data_ref':ref,'variant':variant,'result':result})
+    return map_result({'segments':summaries,'segment_count':len(segments),
+                       'note':'Segment estimates are independent; transit transfers/timetable continuity are not validated. '
+                              'Road snapping offsets can leave gaps; these are not verified walking connectors.'},
+                      {'default':collection(features)})

@@ -14,10 +14,12 @@ from langgraph.prebuilt import ToolNode, tools_condition
 
 from geo_tools import TOOLS as GEO_TOOLS, error_message
 from hotel_geo_tools import HOTEL_TOOLS
+from web_tools import search_web
+from map_tools import compose_routes
 
-TOOLS = [*GEO_TOOLS, *HOTEL_TOOLS]
+TOOLS = [*GEO_TOOLS, *HOTEL_TOOLS, search_web, compose_routes]
 from map_tools import GeoState, collect_geo_results
-from retry_utils import REMOTE_RETRY_POLICY
+from retry_utils import REMOTE_RETRY_POLICY, retry_remote_call
 from agent_limits import CallLimits, start_turn, reserve_model, reserve_tools, limit_result
 
 SYSTEM_PROMPT = """Ты помощник по путешествиям: отели, окружение, маршруты и события. Регион прототипа — Казанская
@@ -39,8 +41,9 @@ overpass_query (out center tags) перед использованием, не �
 Источник этого ограничения: https://ostrovgrad.ru/kak-dobratsya-v-sviyazhsk/ .
 Для исторических, культурных и энциклопедических вопросов используй wikipedia_search
 и при необходимости wikipedia_article: локальная русская Википедия в двух переходах
-от Казани. Обычно передавай purpose: зачем ищешь и какие факты нужны для ответа.
-Тогда отдельная LLM внутри инструмента вернёт сводку вместо исходных текстов;
+от Казани. purpose передавай лишь для длинных выдержек, когда отдельная сводка действительно нужна.
+Для скорости обычно начинай без purpose: это возвращает выдержки сразу, без дополнительной LLM.
+Если purpose нужен, отдельная LLM внутри инструмента вернёт сводку вместо исходных текстов;
 цитаты [source_id] сопоставляй с sources, не выдавай сводку за дословную цитату.
 Если summary_status=unavailable, используй возвращённые исходные фрагменты
 и их источники; сбой сводки не означает отсутствие данных, повторный поиск не нужен.
@@ -228,6 +231,44 @@ retrieved_at — время чтения нашей базы, НЕ дата сн
 """
 
 
+SYSTEM_PROMPT += """
+Скорость и широкий сбор данных:
+- Независимые запросы запускай параллельно в ОДНОМ сообщении tool_calls: Википедия,
+  веб-поиск и OSM. Не жди завершения Википедии, чтобы искать предполагаемые названия
+  в OSM. Можно проверять гипотезы о названии завода, школы, района, улицы через
+  поиск по названию в bbox региона. Гипотеза — только поисковый запрос, не факт:
+  координаты, историческую связь и маршрут подтверждай отдельно.
+- Если город и даты отелей уже известны, поиск отелей запускай параллельно с
+  историей/геопоиском; уточняй географический фильтр после подтверждения мест.
+  Даты и возраст детей не выдумывай. Если дат нет, СРАЗУ выполняй историческую
+  и маршрутную часть задачи, а в конце спроси даты для цен/наличия отелей.
+  Не останавливай весь составной запрос из-за одного отсутствующего параметра.
+- Используй search_web для исторических адресов, актуальной информации и поиска
+  источников, которых нет в локальном корпусе. Выдержки не равны чтению страницы;
+  не называй их проверенным полным текстом. Пустая выдача не доказывает отсутствие.
+- Составной запрос выполняй широко: за первый шаг собери несколько независимых
+  источников и названий, затем строй результат. Не повторяй одинаковые запросы;
+  используй готовые результаты, без purpose по умолчанию и без лишних LLM-сводок.
+- Если поиск названия дал нерелевантный садовый участок, не считай его районом
+  или заводом. После двух попыток по одному названию смени стратегию: возьми из
+  источника улицы/адреса/номера школ и ищи их пакетом в OSM, а не перебирай фильтры
+  одного и того же слова. Названия могут отличаться или отсутствовать в OSM.
+- Для туристического маршрута выбери проверенные точки и порядок посещения,
+  рассчитай необходимые участки через plan_route (независимые участки можно
+  параллельно), затем compose_routes и update_map со стабильным layer_id=tour-route.
+  Одна линия между точками или перечень адресов — не рассчитанный маршрут.
+  Не затирай предыдущие участки очередным участком в одном слое. Если нужна
+  непрерывная поездка на общественном транспорте, следующий departure_time
+  зависит от прибытия предыдущего участка: такие этапы рассчитывай последовательно.
+- Для Тяп-Ляп: контекст исторический, а не обещание музейной экскурсии. Найденное
+  сегодня здание школы/завода не доказывает его связь с группировкой или совпадение
+  исторического адреса. Не придумывай памятники, достопримечательности и границы.
+  Участки с неподтверждённой исторической связью помечай или исключай из тура.
+  Достаточно полезного подтверждённого маршрута по доступным местам; отсутствие
+  одной точки не должно блокировать остальные части задачи.
+"""
+
+
 def build_agent(model=None, *, summary_model=None, checkpointer=None):
     from langmem.short_term import SummarizationNode
 
@@ -308,7 +349,29 @@ def build_agent(model=None, *, summary_model=None, checkpointer=None):
     graph.add_node("tools", ToolNode(TOOLS, handle_tool_errors=error_message))
     graph.add_node('start_turn', start_turn)
     graph.add_node('check_tools', lambda state: reserve_tools(state, limits))
-    graph.add_node('limit', limit_result)
+    def finish_partial(state):
+        stopped = limit_result(state)
+        usage = dict(state['call_usage'])
+        if usage['model_calls'] >= limits.model:
+            return stopped
+        usage['model_calls'] += 1
+        final_messages = [SystemMessage(SYSTEM_PROMPT +
+            '\nБюджет инструментов исчерпан. Верни полезный частичный ответ по уже найденным '
+            'данным и карте, явно укажи невыполненные части. Новые инструменты недоступны; '
+            'не утверждай, что неподтверждённый маршрут рассчитан. Не выдумывай цены и даты.'),
+            *state['messages'], *stopped['messages'][:-1]]
+        try:
+            response = retry_remote_call(lambda: model.invoke(final_messages))
+        except Exception:
+            return {**stopped, 'call_usage': usage}
+        if not response.content or response.tool_calls:
+            return {**stopped, 'call_usage': usage}
+        # A provider returning calls despite having no tools must not leave an
+        # unpaired tool request in the checkpoint.
+        response = response.model_copy(update={'tool_calls': []})
+        return {'messages': [*stopped['messages'][:-1], response], 'call_usage': usage}
+
+    graph.add_node('limit', finish_partial)
     graph.add_node('remember_results', prepare_model)
     graph.add_node('summarize', summarizer, retry_policy=REMOTE_RETRY_POLICY)
     graph.add_edge(START, 'start_turn')
@@ -320,7 +383,7 @@ def build_agent(model=None, *, summary_model=None, checkpointer=None):
     graph.add_edge('limit', END)
     graph.add_edge('tools', 'remember_results')
     return graph.compile(checkpointer=checkpointer).with_config({
-        'max_concurrency': 5, 'recursion_limit': limits.model * 5 + 10})
+        'max_concurrency': max(1, min(16, int(os.getenv("AGENT_MAX_CONCURRENCY", "8")))), 'recursion_limit': limits.model * 5 + 10})
 
 
 def main():
@@ -331,7 +394,7 @@ def main():
     try:
         agent = build_agent()
         inputs = {"messages": [("user", args.query)]}
-        config = {"max_concurrency": 5}
+        config = {"max_concurrency": max(1, min(16, int(os.getenv("AGENT_MAX_CONCURRENCY", "8"))))}
         if args.stream:
             for update in agent.stream(inputs, config=config, stream_mode="updates"):
                 for state in update.values():

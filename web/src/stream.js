@@ -61,6 +61,8 @@ export function technicalPreview(value) {
 }
 
 export const toolLabels = {
+  search_web: 'Ищу источники в интернете', compose_routes: 'Объединяю участки маршрута',
+  plan_route: 'Сравниваю варианты маршрута',
   search_hotels_in_tatarstan: 'Подбираю отели и проверяю тишину',
   noise_in_kazan: 'Оцениваю шум по модели', events_in_kazan: 'Ищу события на даты поездки',
   kazan_event_details: 'Уточняю сведения о событии',

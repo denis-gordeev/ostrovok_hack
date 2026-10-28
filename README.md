@@ -46,6 +46,11 @@ uv run langgraph dev
 
 ## Инструменты
 
+- `search_web(query, max_results=5)` — веб-поиск через [DDGS](https://github.com/deedy5/ddgs),
+  без API-ключа; ссылки, выдержки и дата получения, дисковый кэш на 6 часов.
+- `compose_routes(segments)` — объединение проверенных участков по data_ref/variant
+  в один слой карты; сквозное расписание отдельно не проверяется.
+
 - `transit_route(start_lat, start_lon, end_lat, end_lon, departure_time)` —
   общественный транспорт Казани через локальный OpenTripPlanner. Отправления
   из Bustime, промежуточные времена расчётные; есть пересадки и пешие участки.

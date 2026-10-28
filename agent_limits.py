@@ -15,9 +15,9 @@ class CallLimits:
 
     @classmethod
     def from_env(cls):
-        limits = cls(int(os.getenv('AGENT_MAX_MODEL_CALLS', '8')),
-                     int(os.getenv('AGENT_MAX_TOOL_CALLS', '16')),
-                     int(os.getenv('AGENT_MAX_CALLS_PER_TOOL', '6')))
+        limits = cls(int(os.getenv('AGENT_MAX_MODEL_CALLS', '12')),
+                     int(os.getenv('AGENT_MAX_TOOL_CALLS', '48')),
+                     int(os.getenv('AGENT_MAX_CALLS_PER_TOOL', '12')))
         if min(limits.model, limits.tools, limits.per_tool) < 1:
             raise ValueError('Agent call limits must be positive integers')
         return limits
