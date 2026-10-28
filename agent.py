@@ -20,6 +20,7 @@ from map_tools import compose_routes
 TOOLS = [*GEO_TOOLS, *HOTEL_TOOLS, search_web, compose_routes]
 from map_tools import GeoState, collect_geo_results
 from retry_utils import REMOTE_RETRY_POLICY, retry_remote_call
+from context_memory import summarize_safely
 from agent_limits import CallLimits, start_turn, reserve_model, reserve_tools, limit_result
 
 SYSTEM_PROMPT = """Ты помощник по путешествиям: отели, окружение, маршруты и события. Регион прототипа — Казанская
@@ -339,6 +340,10 @@ def build_agent(model=None, *, summary_model=None, checkpointer=None):
         prompt = SYSTEM_PROMPT + f'\nТекущие дата и время в Казани: {datetime.now(ZoneInfo("Europe/Moscow")).isoformat()}.\n'
         layers = [{k:v for k,v in layer.items() if k not in ('data',)}
                   for layer in state.get('map_layers', {}).values()]
+        latest_request = next((m.content for m in reversed(state['messages']) if isinstance(m,HumanMessage)), '')
+        prompt += ('\nТекущая задача пользователя (сохраняется независимо от резюме): ' +
+                   json.dumps(latest_request,ensure_ascii=False) +
+                   '\nПродолжай выполнять эту задачу; не отвечай, что ждёшь вопрос, пока она не выполнена.')
         prompt += '\nТекущие слои карты (служебные данные): ' + json.dumps(layers, ensure_ascii=False)
         usage = state['call_usage']
         prompt += (f'\nБюджет текущего запроса: обращение к модели {usage["model_calls"]}/{limits.model}, '
@@ -406,7 +411,7 @@ def build_agent(model=None, *, summary_model=None, checkpointer=None):
 
     graph.add_node('limit', finish_partial)
     graph.add_node('remember_results', prepare_model)
-    graph.add_node('summarize', summarizer, retry_policy=REMOTE_RETRY_POLICY)
+    graph.add_node('summarize', lambda state: summarize_safely(summarizer,state), retry_policy=REMOTE_RETRY_POLICY)
     graph.add_edge(START, 'start_turn')
     graph.add_edge('start_turn', 'remember_results')
     graph.add_conditional_edges('remember_results', budget_route, {'limit': 'limit', 'continue': 'summarize'})

@@ -144,3 +144,21 @@ def test_route_research_switches_to_calculation_only_after_verified_pois():
     assert route_research_ready(state)
     state['messages'].append(HumanMessage('Теперь найди другой район'))
     assert not route_research_ready(state)
+
+
+def test_empty_history_summary_retains_current_task_and_tool_pairs():
+    from context_memory import summarize_safely
+    from langchain_core.messages import HumanMessage, ToolMessage
+    from unittest.mock import Mock
+    messages=[HumanMessage('Туристический маршрут по Тяп-Ляп и отели',id='user'),
+              AIMessage('',tool_calls=[{'name':'search_web','id':'call','args':{'query':'Казань'}}]),
+              ToolMessage(json.dumps({'text':'Источник '*1000}),tool_call_id='call')]
+    summarizer=Mock()
+    summarizer.invoke.return_value={'context':{'running_summary':{'summary':''}},'summarized_messages':[]}
+    update=summarize_safely(summarizer,{'messages':messages})
+    assert update['context']['deterministic_summary']
+    assert update['summarized_messages'][0].content==messages[0].content
+    assert update['summarized_messages'][-1].tool_call_id=='call'
+    assert update['summarized_messages'][-2].tool_calls[0]['id']=='call'
+    summarize_safely(summarizer,{'messages':messages,**update})
+    assert summarizer.invoke.call_count==1
