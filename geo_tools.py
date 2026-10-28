@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 import tempfile
+import re
 from concurrent.futures import ThreadPoolExecutor
 from typing import Literal
 from datetime import datetime, timezone
@@ -100,11 +101,17 @@ def overpass_query(query: str, limit: int = 30) -> dict:
     """Run a read-only Overpass QL query. Use [out:json][timeout:60]; and
     out center tags; for geometry centers, or out body; for full OSM fields.
     Always restrict queries to a small bbox or around radius in Kazan.
+    Bbox syntax is (south,west,north,east), e.g. (55.30,48.20,56.35,49.85).
+    These are positional numbers; never write south= or west= inside a bbox.
     Example: [out:json][timeout:60];nwr(around:500,55.7961,49.1064)[leisure=park];out center tags;
     Returns OSM elements, total count, truncation flag, source and fetch date.
     """
     if not 1 <= limit <= 100:
         raise ValueError("limit must be between 1 and 100")
+
+    if re.search(r'\(\s*(?:south|west|north|east)\s*=\s*-?\d', query):
+        raise ValueError('Invalid Overpass bbox: use positional numbers (south,west,north,east), '
+                         'for example (55.30,48.20,56.35,49.85), without parameter names or = signs.')
 
     def fetch():
         response = geo_post(
