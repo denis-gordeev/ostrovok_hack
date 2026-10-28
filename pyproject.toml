@@ -1,0 +1,45 @@
+[project]
+name = "hotel-agent"
+version = "0.1.0"
+description = "LangGraph-агент подбора отелей в Татарстане с оценкой шума и событиями в Казани"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "h3>=4.5",
+    "httpx>=0.28.1",
+    "langchain>=1.4.7",
+    "langchain-anthropic>=1.7.6",
+    "langchain-openrouter>=0.2.9",
+    "langgraph>=1.2.17",
+    "numpy>=2.5",
+    "psycopg[binary]>=3.2",
+    "pydantic>=2.14.1",
+    "pydantic-settings>=2.16.1",
+    "pyproj>=3.8",
+    "python-dotenv>=1.2.4",
+    "shapely>=2.2",
+]
+
+[project.scripts]
+hotel-agent = "hotel_agent.cli:main"
+ostrovok-scrape = "ostrovok_scraper.cli:main"
+kazan-noise = "kazan_noise.cli:main"
+kudago-events = "kudago_events.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/hotel_agent", "src/ostrovok_scraper", "src/kazan_noise", "src/kudago_events"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+markers = ["db: нужен Postgres (OSTROVOK_TEST_DSN)"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+]

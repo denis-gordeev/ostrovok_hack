@@ -1,0 +1,13 @@
+{
+  "session_region": {"region_id": 6288539, "name": "Республика Татарстан", "name_en": "Republic of Tatarstan",
+                     "type": "Province (State)", "country_code": "RU", "center": {"lat": 55.35, "lng": 50.91}},
+  "search_finished": true,
+  "total_av_hotels": 3,
+  "map_hotels": [
+    {"ota_hotel_id": "don_kikhot_hotel_", "master_id": 6479652, "region_catalog_slug": "russia/kazan",
+     "name": "Отель Дон Кихот", "stars": 3, "rating": 8.9, "price": 5609, "latitude": 55.787327, "longitude": 49.105083},
+    {"ota_hotel_id": "gostinitsa_amsterdam_na_tukaya_hotel", "master_id": 13127332, "region_catalog_slug": "russia/kazan",
+     "name": "Отель Амстердам на Тукая", "stars": 0, "rating": 8.2, "price": 2414, "latitude": 55.770264, "longitude": 49.122334},
+    {"ota_hotel_id": "broken_hotel", "name": "Без master_id", "stars": 0, "price": 1000}
+  ]
+}
