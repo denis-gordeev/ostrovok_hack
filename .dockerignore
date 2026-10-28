@@ -1,0 +1,12 @@
+.git
+.env
+.venv
+.cache
+.langgraph_api
+__pycache__
+docs
+.mypy_cache/
+.secrets/
+data/
+web/node_modules/
+web/dist/

@@ -5,19 +5,25 @@ description = "LangGraph-агент подбора отелей в Татарс�
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "fastapi>=0.115,<1",
     "h3>=4.5",
     "httpx>=0.28.1",
     "langchain>=1.4.7",
     "langchain-anthropic>=1.7.6",
+    "langchain-openai>=1.0,<2",
     "langchain-openrouter>=0.2.9",
-    "langgraph>=1.2.17",
+    "langgraph>=1.2.17,<2",
+    "langgraph-cli[inmem]>=0.4.38",
     "numpy>=2.5",
+    "osmnx>=2.0,<3",
     "psycopg[binary]>=3.2",
     "pydantic>=2.14.1",
     "pydantic-settings>=2.16.1",
     "pyproj>=3.8",
-    "python-dotenv>=1.2.4",
+    "python-dotenv>=1.2.4,<2",
+    "requests-cache>=1.2,<2",
     "shapely>=2.2",
+    "uvicorn>=0.30,<1",
 ]
 
 [project.scripts]
@@ -36,6 +42,8 @@ packages = ["src/hotel_agent", "src/ostrovok_scraper", "src/kazan_noise", "src/k
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+# Модули гео-агента (map_tools, transit_routing, scripts/…) лежат в корне, а не в пакете.
+pythonpath = ["."]
 markers = ["db: нужен Postgres (OSTROVOK_TEST_DSN)"]
 
 [dependency-groups]

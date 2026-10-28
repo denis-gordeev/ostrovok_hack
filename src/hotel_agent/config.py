@@ -6,8 +6,8 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
-    # Строка модели в формате init_chat_model: "<провайдер>:<модель>".
-    llm_model: str = "anthropic:claude-opus-5-5"
+    # Строка модели в формате init_chat_model: "<провайдер>:<модель>". Не LLM_MODEL: её читает гео-агент (agent.py).
+    hotel_llm_model: str = "anthropic:claude-opus-5-5"
     # Метод with_structured_output: json_schema | function_calling | json_mode.
     llm_structured_output_method: str = "json_schema"
 

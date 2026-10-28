@@ -18,6 +18,57 @@ services:
       timeout: 3s
       retries: 10
       start_period: 2m
+  overpass:
+    image: wiktorn/overpass-api:0.7.62
+    restart: unless-stopped
+    ports:
+      - "${API_BIND_ADDRESS:-0.0.0.0}:8081:80"
+    volumes:
+      - ./data/overpass:/db
+      - ./data/extract:/data:ro
+    environment:
+      OVERPASS_MODE: init
+      OVERPASS_META: "no"
+      OVERPASS_PLANET_URL: file:///data/kazan.osm.pbf
+      OVERPASS_PLANET_PREPROCESS: >-
+        mv /db/planet.osm.bz2 /db/planet.osm.pbf &&
+        osmium cat /db/planet.osm.pbf -o /db/planet.osm.bz2 &&
+        rm /db/planet.osm.pbf
+      OVERPASS_DIFF_URL: ""
+      OVERPASS_USE_AREAS: "false"
+      OVERPASS_STOP_AFTER_INIT: "false"
+      OVERPASS_UPDATE_SLEEP: "86400"
+      OVERPASS_ALLOW_DUPLICATE_QUERIES: "yes"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS --max-time 10 --get --data-urlencode 'data=[out:json];node(1);out;' http://localhost/api/interpreter | grep -q 'elements'"]
+      interval: 30s
+      timeout: 15s
+      retries: 5
+      start_period: 20m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "${API_BIND_ADDRESS:-0.0.0.0}:8080:8080"
+    volumes:
+      - ./.cache/server:/app/.cache
+    environment:
+      OVERPASS_URL: http://overpass/api
+      OVERPASS_RATE_LIMIT: "false"
+      REQUEST_TIMEOUT: "120"
+    depends_on:
+      overpass:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
   ostrovok-pgdata:

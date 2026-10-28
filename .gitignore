@@ -7,3 +7,9 @@ data/
 traces/
 .DS_Store
 .superpowers/
+.cache/
+.langgraph_api/
+.mypy_cache/
+.secrets/
+web/node_modules/
+web/dist/

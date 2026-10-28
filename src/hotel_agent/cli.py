@@ -84,7 +84,7 @@ async def ask(graph, text: str, *, config: dict, context: AgentContext, tracer: 
 
 async def chat(settings: Settings) -> None:
     graph = build_graph(checkpointer=InMemorySaver())
-    llm = init_chat_model(settings.llm_model)
+    llm = init_chat_model(settings.hotel_llm_model)
     # Один thread_id на запуск: история диалога живёт в checkpointer.
     config = {"configurable": {"thread_id": str(uuid.uuid4())}}
 

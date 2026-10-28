@@ -1,0 +1,13 @@
+[Unit]
+Description=Restrict public access to the Kazan geo APIs
+After=docker.service
+Requires=docker.service
+PartOf=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/ostrovok/deploy/vps-firewall.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=docker.service
