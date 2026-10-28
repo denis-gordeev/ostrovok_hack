@@ -1,0 +1,9 @@
+[Unit]
+Description=Renew the Kazan LangGraph IP TLS certificate
+Wants=network-online.target
+After=network-online.target docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/ostrovok/deploy/renew-langgraph-cert.sh

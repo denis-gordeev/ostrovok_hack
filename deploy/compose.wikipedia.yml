@@ -1,0 +1,27 @@
+services:
+  embeddings:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.embeddings
+    restart: unless-stopped
+    volumes:
+      - ./.cache/server/models:/models
+    ports:
+      - "127.0.0.1:8082:8082"
+    mem_limit: 1g
+    cpus: 1.0
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8082/health',timeout=5)"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 5m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+  langgraph:
+    environment:
+      EMBEDDINGS_URL: http://embeddings:8082
+      WIKIPEDIA_DATA_DIR: /app/.cache/wikipedia/ruwiki-20261001

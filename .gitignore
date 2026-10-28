@@ -1,0 +1,11 @@
+.venv/
+.env
+.cache/
+__pycache__/
+*.pyc
+.langgraph_api/
+data/
+.mypy_cache/
+.secrets/
+web/node_modules/
+web/dist/

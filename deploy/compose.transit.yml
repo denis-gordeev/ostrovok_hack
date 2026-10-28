@@ -1,0 +1,36 @@
+services:
+  otp:
+    image: opentripplanner/opentripplanner:2.10.0
+    restart: unless-stopped
+    command: ["--load", "--serve"]
+    environment:
+      JAVA_TOOL_OPTIONS: -Xmx4g -XX:ActiveProcessorCount=2
+    volumes:
+      - ./data/transit-regional-v1:/var/opentripplanner:ro
+    ports:
+      - "127.0.0.1:8090:8080"
+    mem_limit: 5g
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 3m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+  app:
+    environment:
+      OTP_URL: http://otp:8080
+      TRANSIT_DATA_DIR: /app/transit-data
+    volumes:
+      - ./data/transit-regional-v1:/app/transit-data:ro
+    depends_on:
+      otp:
+        condition: service_healthy
+  langgraph:
+    depends_on:
+      app:
+        condition: service_healthy

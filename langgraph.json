@@ -1,0 +1,8 @@
+{
+  "dependencies": ["."],
+  "graphs": {
+    "geo_agent": "./langgraph_app.py:graph"
+  },
+  "env": ".env",
+  "http": {"app": "./ui_api.py:app"}
+}

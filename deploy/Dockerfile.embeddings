@@ -1,0 +1,9 @@
+FROM python:3.12-slim-bookworm
+RUN pip install --no-cache-dir torch==2.7.1 --index-url https://download.pytorch.org/whl/cpu
+RUN pip install --no-cache-dir transformers==4.57.1 fastapi==0.135.1 uvicorn==0.41.0
+RUN useradd --create-home --uid 10001 app && mkdir /models && chown app:app /models
+WORKDIR /app
+COPY embeddings_api.py ./
+ENV HF_HOME=/models HF_HUB_DISABLE_TELEMETRY=1 TOKENIZERS_PARALLELISM=false EMBEDDING_THREADS=1 PYTHONUNBUFFERED=1
+USER app
+CMD ["uvicorn","embeddings_api:app","--host","0.0.0.0","--port","8082","--workers","1"]
