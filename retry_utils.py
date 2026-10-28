@@ -27,8 +27,8 @@ def is_transient_error(exc: Exception) -> bool:
 
 
 REMOTE_RETRY_POLICY = RetryPolicy(
-    initial_interval=1, backoff_factor=2, max_interval=4,
-    max_attempts=3, jitter=True, retry_on=is_transient_error,
+    initial_interval=0, backoff_factor=1, max_interval=0,
+    max_attempts=3, jitter=False, retry_on=is_transient_error,
 )
 
 
