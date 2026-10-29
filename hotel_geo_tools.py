@@ -133,7 +133,7 @@ async def find_hotels(request, client=None):
     async def assess(result):
         points = [NoisePoint(lat=h.lat, lon=h.lon) for h in result.hotels if (h.city or "").casefold() == "казань"]
         assessment = await asyncio.to_thread(noise_payload, points) if points else {"points": []}
-        selected, counts = select_quiet_hotels(result.hotels, assessment, params.quiet)
+        selected, counts = select_quiet_hotels(result.hotels, assessment, request.quiet)
         return selected, counts, assessment
 
     hotels, counts, assessment = await assess(result)
