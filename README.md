@@ -5,8 +5,8 @@
 реальные данные, маршруты, Википедию, отели из снимка ostrovok.ru, модель шума
 и события KudaGo, с источниками и данными о времени получения.
 
-- Видео-скринкаст: <ЗАГОТОВКА — вставить ссылку на запись>
-- Развёрнутый сервис: `https://188.241.197.121:8443/ui/` (пробуйте с Basic Auth, см. [deploy/README.md](deploy/README.md))
+- Видео-скринкаст: https://drive.google.com/file/d/1i7A8j6sH6f1oaWfga770ZCncV9bT56iR/view?usp=sharing
+- Развёрнутый сервис: `https://188.241.197.121:8443/ui/` (пробуйте с Basic Auth, см. [deploy/README.md](deploy/README.md)). Логин и пароль в secrets.env.age
 
 ## Быстрый старт
 
