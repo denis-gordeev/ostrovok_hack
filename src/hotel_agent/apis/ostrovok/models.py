@@ -56,7 +56,11 @@ class StaySearch(BaseModel):
         default=None,
         description="Город в Татарстане в именительном падеже, например «Казань»; не задан — весь Татарстан",
     )
-    quiet: bool
+    quiet: bool = Field(
+        default=False,
+        description="ПО УМОЛЧАНИЮ False. Ставь True ТОЛЬКО если пользователь явно попросил тихий отель или тишину "
+        "(например «тихий», «потише», «без шума»). Тишину не подразумевай: обычный запрос = False.",
+    )
     adults: int = Field(default=2, ge=1, le=60, description="Количество взрослых")
     children_ages: list[int] = Field(
         default_factory=list, description="Возраст каждого ребёнка на дату заезда (0–17), если есть дети"
