@@ -1,6 +1,7 @@
 services:
   langgraph:
     build: .
+    platform: linux/amd64
     restart: unless-stopped
     command:
       - langgraph

@@ -53,6 +53,9 @@ services:
   app:
     build: .
     restart: unless-stopped
+    # Явная архитектура: кроссплатформенная сборка — тот же образ
+    # на amd64-хосте и на Apple Silicon (через Rosetta).
+    platform: linux/amd64
     ports:
       - "${API_BIND_ADDRESS:-0.0.0.0}:8080:8080"
     volumes:

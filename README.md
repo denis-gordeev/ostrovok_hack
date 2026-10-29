@@ -15,12 +15,24 @@ git clone <URL репозитория>
 cd <repo>
 cp .env.example .env   # заполнить LLM_API_KEY
 docker compose up --build
-# UI: http://localhost:8080/ui/
+# backend geo_api: http://localhost:8080/  (health: /health)
 ```
 
-Полный стек с LangGraph, OTP, эмбеддингами и Википедией поднимается четырьмя
-Compose-файлами — см. [deploy/README.md](deploy/README.md). Локальный запуск без
-Docker: `uv sync --python 3.12`, затем `uv run langgraph dev --config langgraph.json`.
+`docker compose up --build` из корня поднимает ядро: backend `geo_api` (порт 8080),
+Postgres `ostrovok-db` и локальный Overpass. Полный стек с UI (LangGraph), OTP,
+эмбеддингами и Википедией собирается четырьмя Compose-файлами:
+
+```bash
+docker compose -f docker-compose.yml -f deploy/compose.langgraph.yml \
+  -f deploy/compose.transit.yml -f deploy/compose.wikipedia.yml up --build
+# UI: http://localhost:2024/ui/
+```
+
+Или через цель в [Makefile](Makefile): `make up`, `make down`, `make logs`,
+`make ps`, `make seed`. Запуск без Docker: `uv sync --python 3.12`, затем
+`uv run langgraph dev --config langgraph.json` (UI на `http://localhost:2024/ui/`).
+Об ограничениях данных (Overpass-снимок, OTP-граф, корпус Википедии и модель шума
+хранятся вне Git, см. [deploy/README.md](deploy/README.md) и [AGENTS.md](AGENTS.md)).
 
 ## Зависимости и переменные окружения
 
@@ -54,11 +66,12 @@ scripts/tools-db.sh up
 
 ## Маршруты/доступ
 
-- `/ui/` — веб-интерфейс (карта + диалог)
-- `/health` — 200 OK (healthcheck контейнера `app`)
-- `/docs` — Swagger
-- `/knowledge/status` — статус корпуса и индекса Википедии (`corpus_ready`, `semantic_ready`)
-- Прочие HTTP-эндпоинты геоинструментов (`POST /route` и др.)
+На `app` (`http://localhost:8080`): `/health` (200 OK, healthcheck), `/docs` (Swagger),
+`/features`, `/route`, `/drive/route`, `/transit/route` — HTTP-эндпоинты геоинструментов.
+
+На LangGraph-сервере (`http://localhost:2024`): `/ui/` — веб-интерфейс (карта + диалог),
+`/knowledge/status` — статус корпуса и индекса Википедии (`corpus_ready`, `semantic_ready`).
+На VPS оба порта за прокси nginx на `https://188.241.197.121:8443/` (Basic Auth, см. `deploy/`).
 - Тестовый пользователь — не используется; HTTPS защищён Basic Auth (см. `deploy/`)
 
 ## Содержимое

@@ -1,5 +1,6 @@
 services:
   embeddings:
+    platform: linux/amd64
     build:
       context: .
       dockerfile: deploy/Dockerfile.embeddings
