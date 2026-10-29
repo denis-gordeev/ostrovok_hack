@@ -19,8 +19,15 @@ from langchain_graph_retriever import GraphRetriever
 
 from retry_utils import retry_remote_call
 from wiki_embeddings import LocalRuBertEmbeddings
-from wiki_store import (ClosingConnection, article_url, connect, expression,
-                        image_links, metadata, tokens)
+from wiki_store import (
+    ClosingConnection,
+    article_url,
+    connect,
+    expression,
+    image_links,
+    metadata,
+    tokens,
+)
 
 
 def data_folder():
@@ -77,7 +84,7 @@ class WikipediaAdapter(Adapter):
         con = sqlite3.connect(
             (self.folder / "vectors.sqlite").resolve().as_uri() + "?mode=ro",
             uri=True,
-            timeout=30,
+            timeout=15,
             factory=ClosingConnection,
         )
         con.row_factory = sqlite3.Row
@@ -277,8 +284,7 @@ def summarize_wikipedia(result, purpose):
     documents = result.get("results", [result] if result.get("found") else [])
     if not documents:
         return result
-    from openai import (APIConnectionError, APIStatusError, APITimeoutError,
-                        OpenAI)
+    from openai import APIConnectionError, APIStatusError, APITimeoutError, OpenAI
 
     def fallback(kind, status=None):
         # Return retrieved evidence, never provider error text, credentials or prompts.
@@ -303,7 +309,7 @@ def summarize_wikipedia(result, purpose):
         with OpenAI(
             api_key=os.environ["LLM_API_KEY"],
             base_url=os.getenv("LLM_API_URL") or "https://api.openai.com/v1",
-            timeout=60,
+            timeout=20,
             max_retries=0,
         ) as client:
             return client.chat.completions.create(
