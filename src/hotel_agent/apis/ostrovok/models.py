@@ -107,7 +107,7 @@ class StaySearch(BaseModel):
     sort_by: SortBy = Field(
         default="price", description="price — дешевле выше, rating — оценка выше, distance — ближе к near или центру"
     )
-    limit: int = Field(default=10, ge=1, le=30, description="Сколько отелей вернуть")
+    limit: int = Field(default=15, ge=15, le=30, description="Сколько отелей вернуть")
 
     @model_validator(mode="after")
     def _children_are_minors(self):

@@ -93,7 +93,7 @@ def noise_payload(points):
         return result
 
 
-def select_quiet_hotels(hotels, assessment, quiet=False):
+def select_quiet_hotels(hotels, assessment, super_quiet=False):
     """Kazan requires verified day AND night <=50; ties retain original ranking."""
     reports = assessment.get("points", [])
     by_point = {(p["lat"], p["lon"]): p for p in reports}
@@ -113,7 +113,7 @@ def select_quiet_hotels(hotels, assessment, quiet=False):
             unknown += 1
             continue
         score = max(report["day"]["score"], report["night"]["score"])
-        if quiet and score > NOISE_LIMIT:
+        if super_quiet and score > NOISE_LIMIT:
             rejected += 1
             continue
         data["noise"] = report
@@ -133,7 +133,7 @@ async def find_hotels(request, client=None):
     async def assess(result):
         points = [NoisePoint(lat=h.lat, lon=h.lon) for h in result.hotels if (h.city or "").casefold() == "казань"]
         assessment = await asyncio.to_thread(noise_payload, points) if points else {"points": []}
-        selected, counts = select_quiet_hotels(result.hotels, assessment, quiet=request.quiet)
+        selected, counts = select_quiet_hotels(result.hotels, assessment, super_quiet=request.super_quiet)
         return selected, counts, assessment
 
     hotels, counts, assessment = await assess(result)
@@ -186,9 +186,9 @@ async def find_hotels(request, client=None):
 
 @tool(args_schema=StaySearch, response_format="content_and_artifact")
 def search_hotels_in_tatarstan(**params):
-    """Подбирает отели по датам и гостям из снимка ostrovok.ru. quiet=True — только когда пользователь явно
+    """Подбирает отели по датам и гостям из снимка ostrovok.ru. super_quiet=True — только когда пользователь явно
     попросил тихий отель; тогда оставляет лишь проверенные отели с дневным И ночным шумом <=50/100
-    и сортирует по тишине. По умолчанию (не просили про тишину) quiet=False: фильтр по шуму не применяется.
+    и сортирует по тишине. По умолчанию (не просили про тишину) super_quiet=False: фильтр по шуму не применяется.
     Удобное расположение важнее тишины, если пользователь не просил отдельно про тишину.
     Возвращает data_ref для карты.
     """
